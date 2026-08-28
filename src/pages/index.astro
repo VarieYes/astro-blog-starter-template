@@ -1,7 +1,8 @@
+```astro
 ---
 const R2_PUBLIC_URL = "https://pub-df215eae79ca46a2a27f03bec087cad1.r2.dev";
 
-// Asegúrate de que los nombres coincidan exactamente con tus archivos en R2
+// Sigue agregando aquí los nombres de tus imágenes de R2
 const wallpaperFiles = [
   "saturn_rings_space.jpg",
   "rainbow_minimalist_landscape.jpg",
@@ -10,7 +11,9 @@ const wallpaperFiles = [
 ];
 
 function formatAltText(filename: string) {
-  const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.')) || filename;
+  const nameWithoutExt =
+    filename.substring(0, filename.lastIndexOf('.')) || filename;
+
   return nameWithoutExt
     .replace(/[-_]/g, ' ')
     .replace(/\b\w/g, char => char.toUpperCase());
@@ -28,314 +31,1596 @@ const wallpapers = wallpaperFiles.map(filename => ({
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Galería de Wallpapers 4K Ultra HD</title>
-  <meta name="description" content="Colección de fondos de pantalla 4K gratis para PC y celular." />
+
+  <meta
+    name="description"
+    content="Colección de fondos de pantalla 4K gratis para PC y celular."
+  />
 </head>
+
 <body>
 
   <header>
+
     <h1>Wallpapers 4K</h1>
-    <p>Haz clic en cualquier imagen para verla en tamaño completo</p>
+
+    <p>
+      Haz clic en cualquier imagen para verla en tamaño completo
+    </p>
+
+    <!-- BUSCADOR -->
+
+    <div class="search-container">
+
+      <div class="search-box">
+
+        <span class="search-icon">⌕</span>
+
+        <input
+          type="search"
+          id="search-input"
+          placeholder="Buscar wallpaper por nombre..."
+          autocomplete="off"
+          aria-label="Buscar wallpaper por nombre"
+        />
+
+        <button
+          id="clear-search"
+          class="clear-search"
+          type="button"
+          aria-label="Limpiar búsqueda"
+        >
+          ×
+        </button>
+
+      </div>
+
+      <div id="search-info" class="search-info"></div>
+
+    </div>
+
   </header>
 
+
   <main>
-    <div class="gallery">
+
+    <div class="gallery" id="gallery">
+
       {wallpapers.map((item, index) => (
-        <article class="card" data-index={index}>
-          <img src={item.url} alt={item.title} loading="lazy" />
+
+        <article
+          class="card"
+          data-index={index}
+          data-title={item.title.toLowerCase()}
+          data-filename={item.filename.toLowerCase()}
+        >
+
+          <img
+            src={item.url}
+            alt={item.title}
+            loading="lazy"
+          />
+
           <div class="card-overlay">
+
             <span>{item.title}</span>
+
           </div>
+
         </article>
+
       ))}
+
     </div>
+
+
+    <!-- MENSAJE SIN RESULTADOS -->
+
+    <div id="no-results" class="no-results">
+
+      <div class="no-results-icon">🔍</div>
+
+      <h2>No encontramos wallpapers</h2>
+
+      <p>
+        Prueba buscando con otro nombre.
+      </p>
+
+    </div>
+
+
+    <!-- PAGINACIÓN -->
+
+    <div
+      id="pagination"
+      class="pagination"
+    >
+
+      <button
+        id="prev-page"
+        class="page-btn"
+        type="button"
+      >
+        ← Anterior
+      </button>
+
+      <span id="page-info">
+        Página 1
+      </span>
+
+      <button
+        id="next-page"
+        class="page-btn"
+        type="button"
+      >
+        Siguiente →
+      </button>
+
+    </div>
+
   </main>
 
-  <!-- Visualizador en Pantalla Completa (Lightbox Modal) -->
-  <div id="lightbox" class="lightbox" aria-hidden="true">
-    <button id="close-btn" class="close-btn" aria-label="Cerrar">&times;</button>
-    <button id="prev-btn" class="nav-btn prev" aria-label="Anterior">&#10094;</button>
-    
+
+  <!-- LIGHTBOX -->
+
+  <div
+    id="lightbox"
+    class="lightbox"
+    aria-hidden="true"
+  >
+
+    <button
+      id="close-btn"
+      class="close-btn"
+      aria-label="Cerrar"
+    >
+      &times;
+    </button>
+
+    <button
+      id="prev-btn"
+      class="nav-btn prev"
+      aria-label="Anterior"
+    >
+      &#10094;
+    </button>
+
     <div class="lightbox-content">
-      <img id="lightbox-img" src="" alt="" />
+
+      <img
+        id="lightbox-img"
+        src=""
+        alt=""
+      />
+
       <div class="lightbox-footer">
+
         <h2 id="lightbox-title"></h2>
-        <a id="download-btn" href="" download target="_blank" class="download-btn">Descargar 4K</a>
+
+        <a
+          id="download-btn"
+          href=""
+          download
+          target="_blank"
+          class="download-btn"
+        >
+          Descargar 4K
+        </a>
+
       </div>
+
     </div>
 
-    <button id="next-btn" class="nav-btn next" aria-label="Siguiente">&#10095;</button>
+    <button
+      id="next-btn"
+      class="nav-btn next"
+      aria-label="Siguiente"
+    >
+      &#10095;
+    </button>
+
   </div>
 
+
   <footer>
-    <p>© 2026 Wallpapers 4K — Descargas directas de alta resolución</p>
+
+    <p>
+      © 2026 Wallpapers 4K — Descargas directas de alta resolución
+    </p>
+
   </footer>
 
+
   <script is:inline define:vars={{ wallpapers }}>
+
+    // ==========================================
+    // CONFIGURACIÓN
+    // ==========================================
+
+    const ITEMS_PER_PAGE = 20;
+
+    let currentPage = 1;
+
+    let filteredWallpapers = wallpapers;
+
+
+    // ==========================================
+    // ELEMENTOS
+    // ==========================================
+
+    const gallery =
+      document.getElementById('gallery');
+
+    const searchInput =
+      document.getElementById('search-input');
+
+    const clearSearch =
+      document.getElementById('clear-search');
+
+    const searchInfo =
+      document.getElementById('search-info');
+
+    const noResults =
+      document.getElementById('no-results');
+
+    const pagination =
+      document.getElementById('pagination');
+
+    const prevPage =
+      document.getElementById('prev-page');
+
+    const nextPage =
+      document.getElementById('next-page');
+
+    const pageInfo =
+      document.getElementById('page-info');
+
+
+    // ==========================================
+    // LIGHTBOX
+    // ==========================================
+
     let currentIndex = 0;
 
-    const lightbox = document.getElementById('lightbox');
-    const lightboxImg = document.getElementById('lightbox-img');
-    const lightboxTitle = document.getElementById('lightbox-title');
-    const downloadBtn = document.getElementById('download-btn');
-    const closeBtn = document.getElementById('close-btn');
-    const prevBtn = document.getElementById('prev-btn');
-    const nextBtn = document.getElementById('next-btn');
+    const lightbox =
+      document.getElementById('lightbox');
+
+    const lightboxImg =
+      document.getElementById('lightbox-img');
+
+    const lightboxTitle =
+      document.getElementById('lightbox-title');
+
+    const downloadBtn =
+      document.getElementById('download-btn');
+
+    const closeBtn =
+      document.getElementById('close-btn');
+
+    const lightboxPrev =
+      document.getElementById('prev-btn');
+
+    const lightboxNext =
+      document.getElementById('next-btn');
+
 
     function openLightbox(index) {
+
       currentIndex = index;
+
       updateLightbox();
+
       lightbox.classList.add('active');
-      lightbox.setAttribute('aria-hidden', 'false');
+
+      lightbox.setAttribute(
+        'aria-hidden',
+        'false'
+      );
+
       document.body.style.overflow = 'hidden';
     }
 
+
     function closeLightbox() {
+
       lightbox.classList.remove('active');
-      lightbox.setAttribute('aria-hidden', 'true');
+
+      lightbox.setAttribute(
+        'aria-hidden',
+        'true'
+      );
+
       document.body.style.overflow = 'auto';
     }
 
+
     function updateLightbox() {
-      const current = wallpapers[currentIndex];
-      lightboxImg.src = current.url;
-      lightboxImg.alt = current.title;
-      lightboxTitle.textContent = current.title;
-      downloadBtn.href = current.url;
+
+      const current =
+        filteredWallpapers[currentIndex];
+
+      if (!current) return;
+
+      lightboxImg.src =
+        current.url;
+
+      lightboxImg.alt =
+        current.title;
+
+      lightboxTitle.textContent =
+        current.title;
+
+      downloadBtn.href =
+        current.url;
     }
 
-    function showNext() {
-      currentIndex = (currentIndex + 1) % wallpapers.length;
+
+    function showNextLightbox() {
+
+      if (filteredWallpapers.length === 0)
+        return;
+
+      currentIndex =
+        (currentIndex + 1) %
+        filteredWallpapers.length;
+
       updateLightbox();
     }
 
-    function showPrev() {
-      currentIndex = (currentIndex - 1 + wallpapers.length) % wallpapers.length;
+
+    function showPrevLightbox() {
+
+      if (filteredWallpapers.length === 0)
+        return;
+
+      currentIndex =
+        (currentIndex - 1 +
+          filteredWallpapers.length) %
+        filteredWallpapers.length;
+
       updateLightbox();
     }
 
-    // Eventos
-    document.querySelectorAll('.card').forEach(card => {
-      card.addEventListener('click', () => {
-        const index = parseInt(card.getAttribute('data-index'), 10);
-        openLightbox(index);
-      });
-    });
 
-    closeBtn.addEventListener('click', closeLightbox);
-    nextBtn.addEventListener('click', showNext);
-    prevBtn.addEventListener('click', showPrev);
+    // ==========================================
+    // MOSTRAR PÁGINA
+    // ==========================================
 
-    lightbox.addEventListener('click', (e) => {
-      if (e.target === lightbox) closeLightbox();
-    });
+    function renderPage() {
 
-    // Navegación con Teclado
-    document.addEventListener('keydown', (e) => {
-      if (!lightbox.classList.contains('active')) return;
-      if (e.key === 'Escape') closeLightbox();
-      if (e.key === 'ArrowRight') showNext();
-      if (e.key === 'ArrowLeft') showPrev();
-    });
+      gallery.innerHTML = '';
+
+      const totalPages =
+        Math.ceil(
+          filteredWallpapers.length /
+          ITEMS_PER_PAGE
+        );
+
+      // Si no hay resultados
+
+      if (filteredWallpapers.length === 0) {
+
+        noResults.classList.add('active');
+
+        pagination.style.display = 'none';
+
+        searchInfo.textContent = '';
+
+        return;
+
+      }
+
+
+      noResults.classList.remove('active');
+
+      pagination.style.display = 'flex';
+
+
+      // Asegurar página válida
+
+      if (currentPage > totalPages) {
+
+        currentPage = totalPages;
+
+      }
+
+
+      const start =
+        (currentPage - 1) *
+        ITEMS_PER_PAGE;
+
+      const end =
+        start + ITEMS_PER_PAGE;
+
+
+      const pageItems =
+        filteredWallpapers.slice(
+          start,
+          end
+        );
+
+
+      // Crear las 20 tarjetas
+
+      pageItems.forEach(
+        (item, pageIndex) => {
+
+          const realIndex =
+            start + pageIndex;
+
+
+          const article =
+            document.createElement('article');
+
+          article.className = 'card';
+
+          article.setAttribute(
+            'data-index',
+            String(realIndex)
+          );
+
+
+          const img =
+            document.createElement('img');
+
+          img.src = item.url;
+
+          img.alt = item.title;
+
+          img.loading = 'lazy';
+
+
+          const overlay =
+            document.createElement('div');
+
+          overlay.className =
+            'card-overlay';
+
+
+          const span =
+            document.createElement('span');
+
+          span.textContent =
+            item.title;
+
+
+          overlay.appendChild(span);
+
+          article.appendChild(img);
+
+          article.appendChild(overlay);
+
+          gallery.appendChild(article);
+
+
+          article.addEventListener(
+            'click',
+            () => {
+
+              openLightbox(realIndex);
+
+            }
+          );
+
+        }
+      );
+
+
+      // Información de página
+
+      pageInfo.textContent =
+        `Página ${currentPage} de ${totalPages}`;
+
+
+      // Botón anterior
+
+      prevPage.disabled =
+        currentPage === 1;
+
+
+      // Botón siguiente
+
+      nextPage.disabled =
+        currentPage === totalPages;
+
+
+      // Información del buscador
+
+      const showingStart =
+        start + 1;
+
+      const showingEnd =
+        Math.min(
+          end,
+          filteredWallpapers.length
+        );
+
+
+      if (searchInput.value.trim() !== '') {
+
+        searchInfo.textContent =
+          `Mostrando ${showingStart}-${showingEnd} de ${filteredWallpapers.length} resultados`;
+
+      } else {
+
+        searchInfo.textContent =
+          `Mostrando ${showingStart}-${showingEnd} de ${filteredWallpapers.length} wallpapers`;
+
+      }
+
+    }
+
+
+    // ==========================================
+    // SIGUIENTE
+    // ==========================================
+
+    nextPage.addEventListener(
+      'click',
+      () => {
+
+        const totalPages =
+          Math.ceil(
+            filteredWallpapers.length /
+            ITEMS_PER_PAGE
+          );
+
+        if (currentPage < totalPages) {
+
+          currentPage++;
+
+          renderPage();
+
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+
+        }
+
+      }
+    );
+
+
+    // ==========================================
+    // ANTERIOR
+    // ==========================================
+
+    prevPage.addEventListener(
+      'click',
+      () => {
+
+        if (currentPage > 1) {
+
+          currentPage--;
+
+          renderPage();
+
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+
+        }
+
+      }
+    );
+
+
+    // ==========================================
+    // BUSCADOR
+    // ==========================================
+
+    function normalizeText(text) {
+
+      return text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+    }
+
+
+    function performSearch() {
+
+      const query =
+        normalizeText(
+          searchInput.value.trim()
+        );
+
+
+      if (query === '') {
+
+        filteredWallpapers =
+          wallpapers;
+
+      } else {
+
+        const words =
+          query
+            .replace(/[_-]/g, ' ')
+            .split(/\s+/)
+            .filter(Boolean);
+
+
+        filteredWallpapers =
+          wallpapers.filter(
+            wallpaper => {
+
+              const searchable =
+                normalizeText(
+                  `${wallpaper.title} ${wallpaper.filename}`
+                )
+                .replace(/[_-]/g, ' ');
+
+
+              return words.every(
+                word =>
+                  searchable.includes(word)
+              );
+
+            }
+          );
+
+      }
+
+
+      currentPage = 1;
+
+      renderPage();
+
+
+      // Mostrar/ocultar X
+
+      if (query !== '') {
+
+        clearSearch.classList.add('active');
+
+      } else {
+
+        clearSearch.classList.remove('active');
+
+      }
+
+    }
+
+
+    searchInput.addEventListener(
+      'input',
+      performSearch
+    );
+
+
+    // Limpiar búsqueda
+
+    clearSearch.addEventListener(
+      'click',
+      () => {
+
+        searchInput.value = '';
+
+        performSearch();
+
+        searchInput.focus();
+
+      }
+    );
+
+
+    // ==========================================
+    // LIGHTBOX EVENTOS
+    // ==========================================
+
+    closeBtn.addEventListener(
+      'click',
+      closeLightbox
+    );
+
+
+    lightboxNext.addEventListener(
+      'click',
+      showNextLightbox
+    );
+
+
+    lightboxPrev.addEventListener(
+      'click',
+      showPrevLightbox
+    );
+
+
+    lightbox.addEventListener(
+      'click',
+      (e) => {
+
+        if (e.target === lightbox) {
+
+          closeLightbox();
+
+        }
+
+      }
+    );
+
+
+    // ==========================================
+    // TECLADO
+    // ==========================================
+
+    document.addEventListener(
+      'keydown',
+      (e) => {
+
+        // Si estamos escribiendo
+
+        if (
+          document.activeElement ===
+          searchInput
+        ) {
+
+          if (e.key === 'Escape') {
+
+            searchInput.value = '';
+
+            performSearch();
+
+          }
+
+          return;
+
+        }
+
+
+        if (
+          !lightbox.classList.contains('active')
+        ) {
+
+          return;
+
+        }
+
+
+        if (e.key === 'Escape') {
+
+          closeLightbox();
+
+        }
+
+
+        if (e.key === 'ArrowRight') {
+
+          showNextLightbox();
+
+        }
+
+
+        if (e.key === 'ArrowLeft') {
+
+          showPrevLightbox();
+
+        }
+
+      }
+    );
+
+
+    // ==========================================
+    // INICIO
+    // ==========================================
+
+    renderPage();
+
   </script>
+
+
+  <style>
+
+    :root {
+
+      --bg-color: #090d16;
+
+      --card-bg: #151c2c;
+
+      --accent: #38bdf8;
+
+      --text-main: #f8fafc;
+
+      --text-muted: #94a3b8;
+
+    }
+
+
+    * {
+
+      box-sizing: border-box;
+
+      margin: 0;
+
+      padding: 0;
+
+    }
+
+
+    body {
+
+      background-color:
+        var(--bg-color);
+
+      color:
+        var(--text-main);
+
+      font-family:
+        system-ui,
+        -apple-system,
+        sans-serif;
+
+      min-height: 100vh;
+
+      display: flex;
+
+      flex-direction: column;
+
+    }
+
+
+    /* HEADER */
+
+    header {
+
+      text-align: center;
+
+      padding:
+        3rem 1rem 1.5rem;
+
+    }
+
+
+    header h1 {
+
+      font-size: 2.2rem;
+
+      font-weight: 800;
+
+      letter-spacing: -0.025em;
+
+    }
+
+
+    header p {
+
+      color:
+        var(--text-muted);
+
+      margin-top: 0.5rem;
+
+      font-size: 0.95rem;
+
+    }
+
+
+    /* BUSCADOR */
+
+    .search-container {
+
+      width: 100%;
+
+      max-width: 650px;
+
+      margin:
+        1.5rem auto 0;
+
+    }
+
+
+    .search-box {
+
+      position: relative;
+
+      display: flex;
+
+      align-items: center;
+
+      background:
+        #111827;
+
+      border:
+        1px solid rgba(148, 163, 184, 0.2);
+
+      border-radius: 14px;
+
+      transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
+
+    }
+
+
+    .search-box:focus-within {
+
+      border-color:
+        var(--accent);
+
+      box-shadow:
+        0 0 0 3px
+        rgba(56, 189, 248, 0.1);
+
+    }
+
+
+    .search-icon {
+
+      font-size: 1.7rem;
+
+      color:
+        var(--text-muted);
+
+      margin-left: 1rem;
+
+      line-height: 1;
+
+      transform:
+        rotate(-20deg);
+
+    }
+
+
+    #search-input {
+
+      width: 100%;
+
+      border: none;
+
+      outline: none;
+
+      background: transparent;
+
+      color:
+        var(--text-main);
+
+      padding:
+        1rem 3rem 1rem 0.75rem;
+
+      font-size: 1rem;
+
+    }
+
+
+    #search-input::placeholder {
+
+      color:
+        #64748b;
+
+    }
+
+
+    .clear-search {
+
+      position: absolute;
+
+      right: 0.75rem;
+
+      background: none;
+
+      border: none;
+
+      color:
+        var(--text-muted);
+
+      font-size: 1.7rem;
+
+      cursor: pointer;
+
+      display: none;
+
+      line-height: 1;
+
+    }
+
+
+    .clear-search.active {
+
+      display: block;
+
+    }
+
+
+    .clear-search:hover {
+
+      color: white;
+
+    }
+
+
+    .search-info {
+
+      min-height: 20px;
+
+      font-size: 0.8rem;
+
+      color:
+        var(--text-muted);
+
+      margin-top: 0.5rem;
+
+    }
+
+
+    /* MAIN */
+
+    main {
+
+      flex: 1;
+
+      padding: 1.5rem;
+
+      max-width: 1400px;
+
+      margin: 0 auto;
+
+      width: 100%;
+
+    }
+
+
+    /* GALERÍA */
+
+    .gallery {
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          auto-fill,
+          minmax(300px, 1fr)
+        );
+
+      gap: 1.5rem;
+
+    }
+
+
+    .card {
+
+      background-color:
+        var(--card-bg);
+
+      border-radius: 16px;
+
+      overflow: hidden;
+
+      position: relative;
+
+      aspect-ratio: 16 / 9;
+
+      cursor: pointer;
+
+      box-shadow:
+        0 10px 15px -3px
+        rgba(0, 0, 0, 0.4);
+
+      transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+
+    }
+
+
+    .card:hover {
+
+      transform:
+        translateY(-6px);
+
+      box-shadow:
+        0 20px 25px -5px
+        rgba(56, 189, 248, 0.15);
+
+    }
+
+
+    .card img {
+
+      width: 100%;
+
+      height: 100%;
+
+      object-fit: cover;
+
+      display: block;
+
+    }
+
+
+    .card-overlay {
+
+      position: absolute;
+
+      inset: 0;
+
+      background:
+        linear-gradient(
+          to top,
+          rgba(0,0,0,0.85) 0%,
+          transparent 60%
+        );
+
+      display: flex;
+
+      align-items: flex-end;
+
+      padding: 1rem;
+
+      opacity: 0;
+
+      transition:
+        opacity 0.25s ease;
+
+    }
+
+
+    .card:hover .card-overlay {
+
+      opacity: 1;
+
+    }
+
+
+    .card-overlay span {
+
+      font-size: 0.9rem;
+
+      font-weight: 600;
+
+    }
+
+
+    /* SIN RESULTADOS */
+
+    .no-results {
+
+      display: none;
+
+      text-align: center;
+
+      padding: 5rem 1rem;
+
+      color:
+        var(--text-muted);
+
+    }
+
+
+    .no-results.active {
+
+      display: block;
+
+    }
+
+
+    .no-results-icon {
+
+      font-size: 3rem;
+
+      margin-bottom: 1rem;
+
+      opacity: 0.6;
+
+    }
+
+
+    .no-results h2 {
+
+      color:
+        var(--text-main);
+
+      font-size: 1.3rem;
+
+      margin-bottom: 0.5rem;
+
+    }
+
+
+    /* PAGINACIÓN */
+
+    .pagination {
+
+      display: flex;
+
+      justify-content: center;
+
+      align-items: center;
+
+      gap: 1rem;
+
+      margin:
+        2.5rem 0 1rem;
+
+    }
+
+
+    .page-btn {
+
+      background:
+        var(--card-bg);
+
+      color:
+        var(--text-main);
+
+      border:
+        1px solid
+        rgba(148, 163, 184, 0.2);
+
+      padding:
+        0.7rem 1.2rem;
+
+      border-radius: 10px;
+
+      font-size: 0.9rem;
+
+      font-weight: 600;
+
+      cursor: pointer;
+
+      transition:
+        background 0.2s,
+        border-color 0.2s;
+
+    }
+
+
+    .page-btn:hover:not(:disabled) {
+
+      background:
+        rgba(56, 189, 248, 0.12);
+
+      border-color:
+        var(--accent);
+
+    }
+
+
+    .page-btn:disabled {
+
+      opacity: 0.35;
+
+      cursor: not-allowed;
+
+    }
+
+
+    #page-info {
+
+      color:
+        var(--text-muted);
+
+      font-size: 0.9rem;
+
+      min-width: 110px;
+
+      text-align: center;
+
+    }
+
+
+    /* LIGHTBOX */
+
+    .lightbox {
+
+      position: fixed;
+
+      inset: 0;
+
+      background-color:
+        rgba(5, 8, 15, 0.95);
+
+      backdrop-filter:
+        blur(12px);
+
+      z-index: 1000;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      opacity: 0;
+
+      pointer-events: none;
+
+      transition:
+        opacity 0.3s ease;
+
+    }
+
+
+    .lightbox.active {
+
+      opacity: 1;
+
+      pointer-events: auto;
+
+    }
+
+
+    .lightbox-content {
+
+      max-width: 90vw;
+
+      max-height: 85vh;
+
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: center;
+
+    }
+
+
+    .lightbox-content img {
+
+      max-width: 100%;
+
+      max-height: 70vh;
+
+      border-radius: 12px;
+
+      object-fit: contain;
+
+      box-shadow:
+        0 25px 50px -12px
+        rgba(0, 0, 0, 0.7);
+
+    }
+
+
+    .lightbox-footer {
+
+      margin-top: 1.25rem;
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 1.5rem;
+
+    }
+
+
+    .lightbox-footer h2 {
+
+      font-size: 1.2rem;
+
+      font-weight: 600;
+
+    }
+
+
+    .download-btn {
+
+      background-color:
+        var(--accent);
+
+      color:
+        #0f172a;
+
+      padding:
+        0.6rem 1.2rem;
+
+      border-radius: 8px;
+
+      text-decoration: none;
+
+      font-weight: 700;
+
+      font-size: 0.9rem;
+
+      transition:
+        background-color 0.2s;
+
+    }
+
+
+    .download-btn:hover {
+
+      background-color:
+        #7dd3fc;
+
+    }
+
+
+    /* CONTROLES LIGHTBOX */
+
+    .close-btn {
+
+      position: absolute;
+
+      top: 1.5rem;
+
+      right: 2rem;
+
+      background: none;
+
+      border: none;
+
+      color: white;
+
+      font-size: 2.5rem;
+
+      cursor: pointer;
+
+      line-height: 1;
+
+    }
+
+
+    .nav-btn {
+
+      position: absolute;
+
+      top: 50%;
+
+      transform:
+        translateY(-50%);
+
+      background:
+        rgba(255, 255, 255, 0.08);
+
+      border: none;
+
+      color: white;
+
+      font-size: 1.5rem;
+
+      padding:
+        1rem 1.25rem;
+
+      border-radius: 50%;
+
+      cursor: pointer;
+
+      transition:
+        background 0.2s;
+
+    }
+
+
+    .nav-btn:hover {
+
+      background:
+        rgba(255, 255, 255, 0.2);
+
+    }
+
+
+    .nav-btn.prev {
+
+      left: 2rem;
+
+    }
+
+
+    .nav-btn.next {
+
+      right: 2rem;
+
+    }
+
+
+    /* FOOTER */
+
+    footer {
+
+      text-align: center;
+
+      padding: 2rem;
+
+      color:
+        var(--text-muted);
+
+      font-size: 0.85rem;
+
+    }
+
+
+    /* MOBILE */
+
+    @media (max-width: 768px) {
+
+      header {
+
+        padding:
+          2rem 1rem 1rem;
+
+      }
+
+
+      header h1 {
+
+        font-size: 1.8rem;
+
+      }
+
+
+      main {
+
+        padding:
+          1rem;
+
+      }
+
+
+      .gallery {
+
+        grid-template-columns:
+          1fr;
+
+      }
+
+
+      .pagination {
+
+        gap: 0.5rem;
+
+      }
+
+
+      .page-btn {
+
+        padding:
+          0.65rem 0.8rem;
+
+        font-size: 0.8rem;
+
+      }
+
+
+      #page-info {
+
+        min-width: 90px;
+
+        font-size: 0.8rem;
+
+      }
+
+
+      .nav-btn.prev {
+
+        left: 0.5rem;
+
+      }
+
+
+      .nav-btn.next {
+
+        right: 0.5rem;
+
+      }
+
+
+      .lightbox-footer {
+
+        flex-direction: column;
+
+        gap: 0.75rem;
+
+      }
+
+
+      .lightbox-footer h2 {
+
+        text-align: center;
+
+        max-width: 70vw;
+
+      }
+
+    }
+
+  </style>
 
 </body>
 </html>
-
-<style>
-  :root {
-    --bg-color: #090d16;
-    --card-bg: #151c2c;
-    --accent: #38bdf8;
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background-color: var(--bg-color);
-    color: var(--text-main);
-    font-family: system-ui, -apple-system, sans-serif;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  header {
-    text-align: center;
-    padding: 3rem 1rem 1.5rem;
-  }
-
-  header h1 {
-    font-size: 2.2rem;
-    font-weight: 800;
-    letter-spacing: -0.025em;
-  }
-
-  header p {
-    color: var(--text-muted);
-    margin-top: 0.5rem;
-    font-size: 0.95rem;
-  }
-
-  main {
-    flex: 1;
-    padding: 1.5rem;
-    max-width: 1400px;
-    margin: 0 auto;
-    width: 100%;
-  }
-
-  .gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
-  }
-
-  .card {
-    background-color: var(--card-bg);
-    border-radius: 16px;
-    overflow: hidden;
-    position: relative;
-    aspect-ratio: 16 / 9;
-    cursor: pointer;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-  }
-
-  .card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 20px 25px -5px rgba(56, 189, 248, 0.15);
-  }
-
-  .card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .card-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%);
-    display: flex;
-    align-items: flex-end;
-    padding: 1rem;
-    opacity: 0;
-    transition: opacity 0.25s ease;
-  }
-
-  .card:hover .card-overlay { opacity: 1; }
-
-  .card-overlay span {
-    font-size: 0.9rem;
-    font-weight: 600;
-  }
-
-  /* Lightbox Modal */
-  .lightbox {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(5, 8, 15, 0.95);
-    backdrop-filter: blur(12px);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-  }
-
-  .lightbox.active {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .lightbox-content {
-    max-width: 90vw;
-    max-height: 85vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .lightbox-content img {
-    max-width: 100%;
-    max-height: 70vh;
-    border-radius: 12px;
-    object-fit: contain;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-  }
-
-  .lightbox-footer {
-    margin-top: 1.25rem;
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-  }
-
-  .lightbox-footer h2 {
-    font-size: 1.2rem;
-    font-weight: 600;
-  }
-
-  .download-btn {
-    background-color: var(--accent);
-    color: #0f172a;
-    padding: 0.6rem 1.2rem;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 0.9rem;
-    transition: background-color 0.2s;
-  }
-
-  .download-btn:hover { background-color: #7dd3fc; }
-
-  /* Controls */
-  .close-btn {
-    position: absolute;
-    top: 1.5rem;
-    right: 2rem;
-    background: none;
-    border: none;
-    color: white;
-    font-size: 2.5rem;
-    cursor: pointer;
-    line-height: 1;
-  }
-
-  .nav-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.08);
-    border: none;
-    color: white;
-    font-size: 1.5rem;
-    padding: 1rem 1.25rem;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .nav-btn:hover { background: rgba(255, 255, 255, 0.2); }
-  .nav-btn.prev { left: 2rem; }
-  .nav-btn.next { right: 2rem; }
-
-  footer {
-    text-align: center;
-    padding: 2rem;
-    color: var(--text-muted);
-    font-size: 0.85rem;
-  }
-
-  @media (max-width: 768px) {
-    .nav-btn.prev { left: 0.5rem; }
-    .nav-btn.next { right: 0.5rem; }
-    .lightbox-footer { flex-direction: column; gap: 0.75rem; }
-  }
-</style>
+```
