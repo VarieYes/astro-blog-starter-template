@@ -12,14 +12,14 @@ const wallpaperFiles = [
 
 function formatAltText(filename: string) {
   const nameWithoutExt =
-    filename.substring(0, filename.lastIndexOf('.')) || filename;
+    filename.substring(0, filename.lastIndexOf(".")) || filename;
 
   return nameWithoutExt
-    .replace(/[-_]/g, ' ')
+    .replace(/[-_]/g, " ")
     .replace(/\b\w/g, char => char.toUpperCase());
 }
 
-const wallpapers = wallpaperFiles.map(filename => ({
+const wallpapers = wallpaperFiles.map((filename) => ({
   filename,
   title: formatAltText(filename),
   url: `${R2_PUBLIC_URL}/${filename}`
@@ -32,7 +32,7 @@ const wallpapers = wallpaperFiles.map(filename => ({
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Galería de Wallpapers 4K Ultra HD</title>
+  <title>Wallpapers 4K Ultra HD</title>
 
   <meta
     name="description"
@@ -43,7 +43,6 @@ const wallpapers = wallpaperFiles.map(filename => ({
 <body>
 
   <header>
-
     <h1>Wallpapers 4K</h1>
 
     <p>
@@ -51,24 +50,21 @@ const wallpapers = wallpaperFiles.map(filename => ({
     </p>
 
     <!-- BUSCADOR -->
-
     <div class="search-container">
 
       <div class="search-box">
 
-        <span class="search-icon">⌕</span>
+        <span class="search-icon">🔍</span>
 
         <input
-          type="search"
           id="search-input"
+          type="search"
           placeholder="Buscar wallpaper por nombre..."
           autocomplete="off"
-          aria-label="Buscar wallpaper por nombre"
         />
 
         <button
           id="clear-search"
-          class="clear-search"
           type="button"
           aria-label="Limpiar búsqueda"
         >
@@ -77,72 +73,37 @@ const wallpapers = wallpaperFiles.map(filename => ({
 
       </div>
 
-      <div id="search-info" class="search-info"></div>
+      <div id="search-info"></div>
 
     </div>
-
   </header>
 
 
   <main>
 
-    <div class="gallery" id="gallery">
+    <!-- GALERÍA -->
 
-      {wallpapers.map((item, index) => (
-
-        <article
-          class="card"
-          data-index={index}
-          data-title={item.title.toLowerCase()}
-          data-filename={item.filename.toLowerCase()}
-        >
-
-          <img
-            src={item.url}
-            alt={item.title}
-            loading="lazy"
-          />
-
-          <div class="card-overlay">
-
-            <span>{item.title}</span>
-
-          </div>
-
-        </article>
-
-      ))}
-
-    </div>
+    <div id="gallery" class="gallery"></div>
 
 
-    <!-- MENSAJE SIN RESULTADOS -->
+    <!-- SIN RESULTADOS -->
 
     <div id="no-results" class="no-results">
 
-      <div class="no-results-icon">🔍</div>
+      <div>🔍</div>
 
       <h2>No encontramos wallpapers</h2>
 
-      <p>
-        Prueba buscando con otro nombre.
-      </p>
+      <p>Prueba buscando con otro nombre.</p>
 
     </div>
 
 
     <!-- PAGINACIÓN -->
 
-    <div
-      id="pagination"
-      class="pagination"
-    >
+    <div id="pagination" class="pagination">
 
-      <button
-        id="prev-page"
-        class="page-btn"
-        type="button"
-      >
+      <button id="prev-page" type="button">
         ← Anterior
       </button>
 
@@ -150,11 +111,7 @@ const wallpapers = wallpaperFiles.map(filename => ({
         Página 1
       </span>
 
-      <button
-        id="next-page"
-        class="page-btn"
-        type="button"
-      >
+      <button id="next-page" type="button">
         Siguiente →
       </button>
 
@@ -239,7 +196,7 @@ const wallpapers = wallpaperFiles.map(filename => ({
     // CONFIGURACIÓN
     // ==========================================
 
-    const ITEMS_PER_PAGE = 20;
+    const PER_PAGE = 20;
 
     let currentPage = 1;
 
@@ -251,31 +208,31 @@ const wallpapers = wallpaperFiles.map(filename => ({
     // ==========================================
 
     const gallery =
-      document.getElementById('gallery');
+      document.getElementById("gallery");
 
     const searchInput =
-      document.getElementById('search-input');
+      document.getElementById("search-input");
 
     const clearSearch =
-      document.getElementById('clear-search');
+      document.getElementById("clear-search");
 
     const searchInfo =
-      document.getElementById('search-info');
+      document.getElementById("search-info");
 
     const noResults =
-      document.getElementById('no-results');
+      document.getElementById("no-results");
 
     const pagination =
-      document.getElementById('pagination');
+      document.getElementById("pagination");
 
     const prevPage =
-      document.getElementById('prev-page');
+      document.getElementById("prev-page");
 
     const nextPage =
-      document.getElementById('next-page');
+      document.getElementById("next-page");
 
     const pageInfo =
-      document.getElementById('page-info');
+      document.getElementById("page-info");
 
 
     // ==========================================
@@ -285,26 +242,312 @@ const wallpapers = wallpaperFiles.map(filename => ({
     let currentIndex = 0;
 
     const lightbox =
-      document.getElementById('lightbox');
+      document.getElementById("lightbox");
 
     const lightboxImg =
-      document.getElementById('lightbox-img');
+      document.getElementById("lightbox-img");
 
     const lightboxTitle =
-      document.getElementById('lightbox-title');
+      document.getElementById("lightbox-title");
 
     const downloadBtn =
-      document.getElementById('download-btn');
+      document.getElementById("download-btn");
 
     const closeBtn =
-      document.getElementById('close-btn');
+      document.getElementById("close-btn");
 
     const lightboxPrev =
-      document.getElementById('prev-btn');
+      document.getElementById("prev-btn");
 
     const lightboxNext =
-      document.getElementById('next-btn');
+      document.getElementById("next-btn");
 
+
+    // ==========================================
+    // MOSTRAR GALERÍA
+    // ==========================================
+
+    function renderGallery() {
+
+      gallery.innerHTML = "";
+
+      const totalPages =
+        Math.ceil(
+          filteredWallpapers.length / PER_PAGE
+        );
+
+
+      // Sin resultados
+
+      if (filteredWallpapers.length === 0) {
+
+        noResults.classList.add("active");
+
+        pagination.style.display = "none";
+
+        searchInfo.textContent = "";
+
+        return;
+
+      }
+
+
+      noResults.classList.remove("active");
+
+      pagination.style.display = "flex";
+
+
+      // Página actual
+
+      const start =
+        (currentPage - 1) * PER_PAGE;
+
+      const end =
+        start + PER_PAGE;
+
+
+      const items =
+        filteredWallpapers.slice(
+          start,
+          end
+        );
+
+
+      // Crear tarjetas
+
+      items.forEach((item, index) => {
+
+        const realIndex =
+          start + index;
+
+
+        const card =
+          document.createElement("article");
+
+        card.className = "card";
+
+
+        const img =
+          document.createElement("img");
+
+        img.src = item.url;
+
+        img.alt = item.title;
+
+        img.loading = "lazy";
+
+
+        const overlay =
+          document.createElement("div");
+
+        overlay.className =
+          "card-overlay";
+
+
+        const title =
+          document.createElement("span");
+
+        title.textContent =
+          item.title;
+
+
+        overlay.appendChild(title);
+
+        card.appendChild(img);
+
+        card.appendChild(overlay);
+
+        gallery.appendChild(card);
+
+
+        // Abrir lightbox
+
+        card.addEventListener(
+          "click",
+          () => {
+
+            openLightbox(realIndex);
+
+          }
+        );
+
+      });
+
+
+      // Información
+
+      pageInfo.textContent =
+        `Página ${currentPage} de ${totalPages}`;
+
+
+      prevPage.disabled =
+        currentPage === 1;
+
+
+      nextPage.disabled =
+        currentPage === totalPages;
+
+
+      searchInfo.textContent =
+        `Mostrando ${start + 1}-${Math.min(
+          end,
+          filteredWallpapers.length
+        )} de ${filteredWallpapers.length}`;
+
+    }
+
+
+    // ==========================================
+    // BUSCADOR
+    // ==========================================
+
+    function normalize(text) {
+
+      return text
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+    }
+
+
+    function searchWallpapers() {
+
+      const query =
+        normalize(
+          searchInput.value.trim()
+        );
+
+
+      if (query === "") {
+
+        filteredWallpapers =
+          wallpapers;
+
+      } else {
+
+        const words =
+          query
+            .replace(/[_-]/g, " ")
+            .split(/\s+/)
+            .filter(Boolean);
+
+
+        filteredWallpapers =
+          wallpapers.filter(item => {
+
+            const text =
+              normalize(
+                `${item.title} ${item.filename}`
+              )
+              .replace(/[_-]/g, " ");
+
+
+            return words.every(
+              word =>
+                text.includes(word)
+            );
+
+          });
+
+      }
+
+
+      currentPage = 1;
+
+      renderGallery();
+
+
+      // Mostrar X
+
+      if (query !== "") {
+
+        clearSearch.classList.add("visible");
+
+      } else {
+
+        clearSearch.classList.remove("visible");
+
+      }
+
+    }
+
+
+    searchInput.addEventListener(
+      "input",
+      searchWallpapers
+    );
+
+
+    clearSearch.addEventListener(
+      "click",
+      () => {
+
+        searchInput.value = "";
+
+        searchWallpapers();
+
+        searchInput.focus();
+
+      }
+    );
+
+
+    // ==========================================
+    // PAGINACIÓN
+    // ==========================================
+
+    nextPage.addEventListener(
+      "click",
+      () => {
+
+        const totalPages =
+          Math.ceil(
+            filteredWallpapers.length / PER_PAGE
+          );
+
+
+        if (currentPage < totalPages) {
+
+          currentPage++;
+
+          renderGallery();
+
+          window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+          });
+
+        }
+
+      }
+    );
+
+
+    prevPage.addEventListener(
+      "click",
+      () => {
+
+        if (currentPage > 1) {
+
+          currentPage--;
+
+          renderGallery();
+
+          window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+          });
+
+        }
+
+      }
+    );
+
+
+    // ==========================================
+    // LIGHTBOX
+    // ==========================================
 
     function openLightbox(index) {
 
@@ -312,52 +555,57 @@ const wallpapers = wallpaperFiles.map(filename => ({
 
       updateLightbox();
 
-      lightbox.classList.add('active');
+      lightbox.classList.add("active");
 
       lightbox.setAttribute(
-        'aria-hidden',
-        'false'
+        "aria-hidden",
+        "false"
       );
 
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow =
+        "hidden";
+
     }
 
 
     function closeLightbox() {
 
-      lightbox.classList.remove('active');
+      lightbox.classList.remove("active");
 
       lightbox.setAttribute(
-        'aria-hidden',
-        'true'
+        "aria-hidden",
+        "true"
       );
 
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow =
+        "auto";
+
     }
 
 
     function updateLightbox() {
 
-      const current =
+      const item =
         filteredWallpapers[currentIndex];
 
-      if (!current) return;
+      if (!item) return;
 
       lightboxImg.src =
-        current.url;
+        item.url;
 
       lightboxImg.alt =
-        current.title;
+        item.title;
 
       lightboxTitle.textContent =
-        current.title;
+        item.title;
 
       downloadBtn.href =
-        current.url;
+        item.url;
+
     }
 
 
-    function showNextLightbox() {
+    function showNext() {
 
       if (filteredWallpapers.length === 0)
         return;
@@ -367,10 +615,11 @@ const wallpapers = wallpaperFiles.map(filename => ({
         filteredWallpapers.length;
 
       updateLightbox();
+
     }
 
 
-    function showPrevLightbox() {
+    function showPrevious() {
 
       if (filteredWallpapers.length === 0)
         return;
@@ -381,361 +630,35 @@ const wallpapers = wallpaperFiles.map(filename => ({
         filteredWallpapers.length;
 
       updateLightbox();
-    }
-
-
-    // ==========================================
-    // MOSTRAR PÁGINA
-    // ==========================================
-
-    function renderPage() {
-
-      gallery.innerHTML = '';
-
-      const totalPages =
-        Math.ceil(
-          filteredWallpapers.length /
-          ITEMS_PER_PAGE
-        );
-
-      // Si no hay resultados
-
-      if (filteredWallpapers.length === 0) {
-
-        noResults.classList.add('active');
-
-        pagination.style.display = 'none';
-
-        searchInfo.textContent = '';
-
-        return;
-
-      }
-
-
-      noResults.classList.remove('active');
-
-      pagination.style.display = 'flex';
-
-
-      // Asegurar página válida
-
-      if (currentPage > totalPages) {
-
-        currentPage = totalPages;
-
-      }
-
-
-      const start =
-        (currentPage - 1) *
-        ITEMS_PER_PAGE;
-
-      const end =
-        start + ITEMS_PER_PAGE;
-
-
-      const pageItems =
-        filteredWallpapers.slice(
-          start,
-          end
-        );
-
-
-      // Crear las 20 tarjetas
-
-      pageItems.forEach(
-        (item, pageIndex) => {
-
-          const realIndex =
-            start + pageIndex;
-
-
-          const article =
-            document.createElement('article');
-
-          article.className = 'card';
-
-          article.setAttribute(
-            'data-index',
-            String(realIndex)
-          );
-
-
-          const img =
-            document.createElement('img');
-
-          img.src = item.url;
-
-          img.alt = item.title;
-
-          img.loading = 'lazy';
-
-
-          const overlay =
-            document.createElement('div');
-
-          overlay.className =
-            'card-overlay';
-
-
-          const span =
-            document.createElement('span');
-
-          span.textContent =
-            item.title;
-
-
-          overlay.appendChild(span);
-
-          article.appendChild(img);
-
-          article.appendChild(overlay);
-
-          gallery.appendChild(article);
-
-
-          article.addEventListener(
-            'click',
-            () => {
-
-              openLightbox(realIndex);
-
-            }
-          );
-
-        }
-      );
-
-
-      // Información de página
-
-      pageInfo.textContent =
-        `Página ${currentPage} de ${totalPages}`;
-
-
-      // Botón anterior
-
-      prevPage.disabled =
-        currentPage === 1;
-
-
-      // Botón siguiente
-
-      nextPage.disabled =
-        currentPage === totalPages;
-
-
-      // Información del buscador
-
-      const showingStart =
-        start + 1;
-
-      const showingEnd =
-        Math.min(
-          end,
-          filteredWallpapers.length
-        );
-
-
-      if (searchInput.value.trim() !== '') {
-
-        searchInfo.textContent =
-          `Mostrando ${showingStart}-${showingEnd} de ${filteredWallpapers.length} resultados`;
-
-      } else {
-
-        searchInfo.textContent =
-          `Mostrando ${showingStart}-${showingEnd} de ${filteredWallpapers.length} wallpapers`;
-
-      }
 
     }
 
-
-    // ==========================================
-    // SIGUIENTE
-    // ==========================================
-
-    nextPage.addEventListener(
-      'click',
-      () => {
-
-        const totalPages =
-          Math.ceil(
-            filteredWallpapers.length /
-            ITEMS_PER_PAGE
-          );
-
-        if (currentPage < totalPages) {
-
-          currentPage++;
-
-          renderPage();
-
-          window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-          });
-
-        }
-
-      }
-    );
-
-
-    // ==========================================
-    // ANTERIOR
-    // ==========================================
-
-    prevPage.addEventListener(
-      'click',
-      () => {
-
-        if (currentPage > 1) {
-
-          currentPage--;
-
-          renderPage();
-
-          window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-          });
-
-        }
-
-      }
-    );
-
-
-    // ==========================================
-    // BUSCADOR
-    // ==========================================
-
-    function normalizeText(text) {
-
-      return text
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
-
-    }
-
-
-    function performSearch() {
-
-      const query =
-        normalizeText(
-          searchInput.value.trim()
-        );
-
-
-      if (query === '') {
-
-        filteredWallpapers =
-          wallpapers;
-
-      } else {
-
-        const words =
-          query
-            .replace(/[_-]/g, ' ')
-            .split(/\s+/)
-            .filter(Boolean);
-
-
-        filteredWallpapers =
-          wallpapers.filter(
-            wallpaper => {
-
-              const searchable =
-                normalizeText(
-                  `${wallpaper.title} ${wallpaper.filename}`
-                )
-                .replace(/[_-]/g, ' ');
-
-
-              return words.every(
-                word =>
-                  searchable.includes(word)
-              );
-
-            }
-          );
-
-      }
-
-
-      currentPage = 1;
-
-      renderPage();
-
-
-      // Mostrar/ocultar X
-
-      if (query !== '') {
-
-        clearSearch.classList.add('active');
-
-      } else {
-
-        clearSearch.classList.remove('active');
-
-      }
-
-    }
-
-
-    searchInput.addEventListener(
-      'input',
-      performSearch
-    );
-
-
-    // Limpiar búsqueda
-
-    clearSearch.addEventListener(
-      'click',
-      () => {
-
-        searchInput.value = '';
-
-        performSearch();
-
-        searchInput.focus();
-
-      }
-    );
-
-
-    // ==========================================
-    // LIGHTBOX EVENTOS
-    // ==========================================
 
     closeBtn.addEventListener(
-      'click',
+      "click",
       closeLightbox
     );
 
 
     lightboxNext.addEventListener(
-      'click',
-      showNextLightbox
+      "click",
+      showNext
     );
 
 
     lightboxPrev.addEventListener(
-      'click',
-      showPrevLightbox
+      "click",
+      showPrevious
     );
 
 
     lightbox.addEventListener(
-      'click',
-      (e) => {
+      "click",
+      (event) => {
 
-        if (e.target === lightbox) {
+        if (
+          event.target === lightbox
+        ) {
 
           closeLightbox();
 
@@ -750,55 +673,30 @@ const wallpapers = wallpaperFiles.map(filename => ({
     // ==========================================
 
     document.addEventListener(
-      'keydown',
-      (e) => {
-
-        // Si estamos escribiendo
+      "keydown",
+      (event) => {
 
         if (
-          document.activeElement ===
-          searchInput
+          lightbox.classList.contains("active")
         ) {
 
-          if (e.key === 'Escape') {
+          if (event.key === "Escape") {
 
-            searchInput.value = '';
-
-            performSearch();
+            closeLightbox();
 
           }
 
-          return;
+          if (event.key === "ArrowRight") {
 
-        }
+            showNext();
 
+          }
 
-        if (
-          !lightbox.classList.contains('active')
-        ) {
+          if (event.key === "ArrowLeft") {
 
-          return;
+            showPrevious();
 
-        }
-
-
-        if (e.key === 'Escape') {
-
-          closeLightbox();
-
-        }
-
-
-        if (e.key === 'ArrowRight') {
-
-          showNextLightbox();
-
-        }
-
-
-        if (e.key === 'ArrowLeft') {
-
-          showPrevLightbox();
+          }
 
         }
 
@@ -807,10 +705,10 @@ const wallpapers = wallpaperFiles.map(filename => ({
 
 
     // ==========================================
-    // INICIO
+    // INICIAR
     // ==========================================
 
-    renderPage();
+    renderGallery();
 
   </script>
 
@@ -904,9 +802,9 @@ const wallpapers = wallpaperFiles.map(filename => ({
 
     .search-container {
 
-      width: 100%;
-
       max-width: 650px;
+
+      width: 100%;
 
       margin:
         1.5rem auto 0;
@@ -916,17 +814,18 @@ const wallpapers = wallpaperFiles.map(filename => ({
 
     .search-box {
 
-      position: relative;
-
       display: flex;
 
       align-items: center;
+
+      position: relative;
 
       background:
         #111827;
 
       border:
-        1px solid rgba(148, 163, 184, 0.2);
+        1px solid
+        rgba(148, 163, 184, 0.2);
 
       border-radius: 14px;
 
@@ -951,17 +850,11 @@ const wallpapers = wallpaperFiles.map(filename => ({
 
     .search-icon {
 
-      font-size: 1.7rem;
-
-      color:
-        var(--text-muted);
-
       margin-left: 1rem;
 
-      line-height: 1;
+      font-size: 1rem;
 
-      transform:
-        rotate(-20deg);
+      opacity: 0.6;
 
     }
 
@@ -995,7 +888,7 @@ const wallpapers = wallpaperFiles.map(filename => ({
     }
 
 
-    .clear-search {
+    #clear-search {
 
       position: absolute;
 
@@ -1019,30 +912,30 @@ const wallpapers = wallpaperFiles.map(filename => ({
     }
 
 
-    .clear-search.active {
+    #clear-search.visible {
 
       display: block;
 
     }
 
 
-    .clear-search:hover {
+    #clear-search:hover {
 
       color: white;
 
     }
 
 
-    .search-info {
+    #search-info {
 
       min-height: 20px;
 
-      font-size: 0.8rem;
+      margin-top: 0.5rem;
 
       color:
         var(--text-muted);
 
-      margin-top: 0.5rem;
+      font-size: 0.8rem;
 
     }
 
@@ -1057,9 +950,9 @@ const wallpapers = wallpaperFiles.map(filename => ({
 
       max-width: 1400px;
 
-      margin: 0 auto;
-
       width: 100%;
+
+      margin: 0 auto;
 
     }
 
@@ -1083,7 +976,7 @@ const wallpapers = wallpaperFiles.map(filename => ({
 
     .card {
 
-      background-color:
+      background:
         var(--card-bg);
 
       border-radius: 16px;
@@ -1141,7 +1034,7 @@ const wallpapers = wallpaperFiles.map(filename => ({
       background:
         linear-gradient(
           to top,
-          rgba(0,0,0,0.85) 0%,
+          rgba(0, 0, 0, 0.85) 0%,
           transparent 60%
         );
 
@@ -1198,13 +1091,11 @@ const wallpapers = wallpaperFiles.map(filename => ({
     }
 
 
-    .no-results-icon {
+    .no-results div {
 
       font-size: 3rem;
 
       margin-bottom: 1rem;
-
-      opacity: 0.6;
 
     }
 
@@ -1227,9 +1118,9 @@ const wallpapers = wallpaperFiles.map(filename => ({
 
       display: flex;
 
-      justify-content: center;
-
       align-items: center;
+
+      justify-content: center;
 
       gap: 1rem;
 
@@ -1239,7 +1130,7 @@ const wallpapers = wallpaperFiles.map(filename => ({
     }
 
 
-    .page-btn {
+    .pagination button {
 
       background:
         var(--card-bg);
@@ -1251,10 +1142,10 @@ const wallpapers = wallpaperFiles.map(filename => ({
         1px solid
         rgba(148, 163, 184, 0.2);
 
+      border-radius: 10px;
+
       padding:
         0.7rem 1.2rem;
-
-      border-radius: 10px;
 
       font-size: 0.9rem;
 
@@ -1269,7 +1160,7 @@ const wallpapers = wallpaperFiles.map(filename => ({
     }
 
 
-    .page-btn:hover:not(:disabled) {
+    .pagination button:hover:not(:disabled) {
 
       background:
         rgba(56, 189, 248, 0.12);
@@ -1280,7 +1171,7 @@ const wallpapers = wallpaperFiles.map(filename => ({
     }
 
 
-    .page-btn:disabled {
+    .pagination button:disabled {
 
       opacity: 0.35;
 
@@ -1294,11 +1185,11 @@ const wallpapers = wallpaperFiles.map(filename => ({
       color:
         var(--text-muted);
 
-      font-size: 0.9rem;
-
-      min-width: 110px;
+      min-width: 120px;
 
       text-align: center;
+
+      font-size: 0.9rem;
 
     }
 
@@ -1311,7 +1202,7 @@ const wallpapers = wallpaperFiles.map(filename => ({
 
       inset: 0;
 
-      background-color:
+      background:
         rgba(5, 8, 15, 0.95);
 
       backdrop-filter:
@@ -1400,7 +1291,7 @@ const wallpapers = wallpaperFiles.map(filename => ({
 
     .download-btn {
 
-      background-color:
+      background:
         var(--accent);
 
       color:
@@ -1425,7 +1316,7 @@ const wallpapers = wallpaperFiles.map(filename => ({
 
     .download-btn:hover {
 
-      background-color:
+      background:
         #7dd3fc;
 
     }
@@ -1554,8 +1445,7 @@ const wallpapers = wallpaperFiles.map(filename => ({
 
       .gallery {
 
-        grid-template-columns:
-          1fr;
+        grid-template-columns: 1fr;
 
       }
 
@@ -1567,7 +1457,7 @@ const wallpapers = wallpaperFiles.map(filename => ({
       }
 
 
-      .page-btn {
+      .pagination button {
 
         padding:
           0.65rem 0.8rem;
