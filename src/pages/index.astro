@@ -36,12 +36,22 @@ const wallpapers = wallpaperFiles.map(filename => ({
   <header>
     <h1>Wallpapers 4K</h1>
     <p>Haz clic en cualquier imagen para verla en tamaño completo</p>
+
+    <div class="search-wrapper">
+      <input
+        type="text"
+        id="search-input"
+        class="search-input"
+        placeholder="Buscar wallpaper por nombre..."
+        autocomplete="off"
+      />
+    </div>
   </header>
 
   <main>
-    <div class="gallery">
+    <div class="gallery" id="gallery">
       {wallpapers.map((item, index) => (
-        <article class="card" data-index={index}>
+        <article class="card" data-index={index} data-title={item.title.toLowerCase()}>
           <img src={item.url} alt={item.title} loading="lazy" />
           <div class="card-overlay">
             <span>{item.title}</span>
@@ -49,13 +59,21 @@ const wallpapers = wallpaperFiles.map(filename => ({
         </article>
       ))}
     </div>
+
+    <p id="no-results" class="no-results" hidden>No se encontraron wallpapers con ese nombre.</p>
+
+    <div class="pagination" id="pagination">
+      <button id="prev-page" class="page-btn" aria-label="Página anterior">&#10094;</button>
+      <span id="page-indicator" class="page-indicator">Página 1</span>
+      <button id="next-page" class="page-btn" aria-label="Página siguiente">&#10095;</button>
+    </div>
   </main>
 
   <!-- Visualizador en Pantalla Completa (Lightbox Modal) -->
   <div id="lightbox" class="lightbox" aria-hidden="true">
     <button id="close-btn" class="close-btn" aria-label="Cerrar">&times;</button>
     <button id="prev-btn" class="nav-btn prev" aria-label="Anterior">&#10094;</button>
-    
+
     <div class="lightbox-content">
       <img id="lightbox-img" src="" alt="" />
       <div class="lightbox-footer">
@@ -72,7 +90,21 @@ const wallpapers = wallpaperFiles.map(filename => ({
   </footer>
 
   <script is:inline define:vars={{ wallpapers }}>
-    let currentIndex = 0;
+    const ITEMS_PER_PAGE = 20;
+
+    let currentPage = 1;
+    let filteredIndices = wallpapers.map((_, i) => i); // índices originales que pasan el filtro actual
+    let currentLightboxPos = 0; // posición dentro de filteredIndices, para el lightbox
+
+    const galleryEl = document.getElementById('gallery');
+    const cards = Array.from(document.querySelectorAll('.card'));
+    const searchInput = document.getElementById('search-input');
+    const noResults = document.getElementById('no-results');
+
+    const paginationEl = document.getElementById('pagination');
+    const prevPageBtn = document.getElementById('prev-page');
+    const nextPageBtn = document.getElementById('next-page');
+    const pageIndicator = document.getElementById('page-indicator');
 
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = document.getElementById('lightbox-img');
@@ -82,8 +114,75 @@ const wallpapers = wallpaperFiles.map(filename => ({
     const prevBtn = document.getElementById('prev-btn');
     const nextBtn = document.getElementById('next-btn');
 
-    function openLightbox(index) {
-      currentIndex = index;
+    // ---------- Filtro + Paginación ----------
+
+    function applyFilter(query) {
+      const q = query.trim().toLowerCase();
+      filteredIndices = wallpapers
+        .map((item, i) => ({ i, title: item.title.toLowerCase() }))
+        .filter(entry => entry.title.includes(q))
+        .map(entry => entry.i);
+      currentPage = 1;
+      renderPage();
+    }
+
+    function totalPages() {
+      return Math.max(1, Math.ceil(filteredIndices.length / ITEMS_PER_PAGE));
+    }
+
+    function renderPage() {
+      // Oculta todas las cards primero
+      cards.forEach(card => { card.style.display = 'none'; });
+
+      if (filteredIndices.length === 0) {
+        noResults.hidden = false;
+        paginationEl.hidden = true;
+        return;
+      }
+
+      noResults.hidden = true;
+      paginationEl.hidden = totalPages() <= 1;
+
+      const start = (currentPage - 1) * ITEMS_PER_PAGE;
+      const end = start + ITEMS_PER_PAGE;
+      const pageIndices = filteredIndices.slice(start, end);
+
+      pageIndices.forEach(originalIndex => {
+        const card = cards[originalIndex];
+        if (card) card.style.display = '';
+      });
+
+      pageIndicator.textContent = `Página ${currentPage} de ${totalPages()}`;
+      prevPageBtn.disabled = currentPage <= 1;
+      nextPageBtn.disabled = currentPage >= totalPages();
+
+      // Vuelve arriba de la galería al cambiar de página
+      galleryEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    searchInput.addEventListener('input', (e) => {
+      applyFilter(e.target.value);
+    });
+
+    prevPageBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderPage();
+      }
+    });
+
+    nextPageBtn.addEventListener('click', () => {
+      if (currentPage < totalPages()) {
+        currentPage++;
+        renderPage();
+      }
+    });
+
+    // ---------- Lightbox ----------
+
+    function openLightbox(originalIndex) {
+      const pos = filteredIndices.indexOf(originalIndex);
+      currentLightboxPos = pos !== -1 ? pos : 0;
       updateLightbox();
       lightbox.classList.add('active');
       lightbox.setAttribute('aria-hidden', 'false');
@@ -97,7 +196,8 @@ const wallpapers = wallpaperFiles.map(filename => ({
     }
 
     function updateLightbox() {
-      const current = wallpapers[currentIndex];
+      const originalIndex = filteredIndices[currentLightboxPos];
+      const current = wallpapers[originalIndex];
       lightboxImg.src = current.url;
       lightboxImg.alt = current.title;
       lightboxTitle.textContent = current.title;
@@ -105,21 +205,23 @@ const wallpapers = wallpaperFiles.map(filename => ({
     }
 
     function showNext() {
-      currentIndex = (currentIndex + 1) % wallpapers.length;
+      if (filteredIndices.length === 0) return;
+      currentLightboxPos = (currentLightboxPos + 1) % filteredIndices.length;
       updateLightbox();
     }
 
     function showPrev() {
-      currentIndex = (currentIndex - 1 + wallpapers.length) % wallpapers.length;
+      if (filteredIndices.length === 0) return;
+      currentLightboxPos = (currentLightboxPos - 1 + filteredIndices.length) % filteredIndices.length;
       updateLightbox();
     }
 
-    // Eventos
-    document.querySelectorAll('.card').forEach(card => {
-      card.addEventListener('click', () => {
-        const index = parseInt(card.getAttribute('data-index'), 10);
-        openLightbox(index);
-      });
+    // Eventos de las cards (delegación, funciona para todas aunque cambien de página)
+    galleryEl.addEventListener('click', (e) => {
+      const card = e.target.closest('.card');
+      if (!card) return;
+      const index = parseInt(card.getAttribute('data-index'), 10);
+      openLightbox(index);
     });
 
     closeBtn.addEventListener('click', closeLightbox);
@@ -130,13 +232,16 @@ const wallpapers = wallpaperFiles.map(filename => ({
       if (e.target === lightbox) closeLightbox();
     });
 
-    // Navegación con Teclado
+    // Navegación con teclado
     document.addEventListener('keydown', (e) => {
       if (!lightbox.classList.contains('active')) return;
       if (e.key === 'Escape') closeLightbox();
       if (e.key === 'ArrowRight') showNext();
       if (e.key === 'ArrowLeft') showPrev();
     });
+
+    // Render inicial
+    renderPage();
   </script>
 
 </body>
@@ -177,6 +282,34 @@ const wallpapers = wallpaperFiles.map(filename => ({
     color: var(--text-muted);
     margin-top: 0.5rem;
     font-size: 0.95rem;
+  }
+
+  .search-wrapper {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+  }
+
+  .search-input {
+    width: 100%;
+    max-width: 420px;
+    padding: 0.75rem 1.1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background-color: var(--card-bg);
+    color: var(--text-main);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .search-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
   }
 
   main {
@@ -232,6 +365,50 @@ const wallpapers = wallpaperFiles.map(filename => ({
   .card-overlay span {
     font-size: 0.9rem;
     font-weight: 600;
+  }
+
+  .no-results {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 3rem 1rem;
+    font-size: 0.95rem;
+  }
+
+  /* Paginación */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+  }
+
+  .page-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    color: var(--text-main);
+    font-size: 1.1rem;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+  }
+
+  .page-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  .page-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .page-indicator {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    min-width: 120px;
+    text-align: center;
   }
 
   /* Lightbox Modal */
