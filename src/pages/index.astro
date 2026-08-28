@@ -1,3 +1,4 @@
+```astro
 ---
 const R2_PUBLIC_URL = "https://pub-df215eae79ca46a2a27f03bec087cad1.r2.dev";
 
@@ -6,33 +7,1395 @@ const wallpaperFiles = [
   "rainbow_minimalist_landscape.jpg",
   "sunflower_field_sunset.jpg",
   "sunflower_sunset_dream.jpg"
+
+  // Sigue agregando aquí tus imágenes:
+  // "otra_imagen.jpg",
+  // "otro_wallpaper_4k.jpg",
 ];
 
 const wallpapers = wallpaperFiles.map((filename) => ({
   filename,
   title: filename
     .replace(/\.[^/.]+$/, "")
-    .replace(/[-_]/g, " "),
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase()),
   url: `${R2_PUBLIC_URL}/${filename}`
 }));
 ---
 
-<h1>Wallpapers 4K</h1>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<div id="gallery"></div>
+  <title>Wallpapers 4K Ultra HD</title>
 
-<script define:vars={{ wallpapers }}>
-  const gallery = document.getElementById("gallery");
+  <meta
+    name="description"
+    content="Colección de fondos de pantalla 4K gratis para PC y celular."
+  />
+</head>
 
-  wallpapers.forEach((item) => {
-    const img = document.createElement("img");
+<body>
 
-    img.src = item.url;
-    img.alt = item.title;
+  <header>
+    <h1>Wallpapers 4K</h1>
 
-    img.style.width = "300px";
-    img.style.margin = "10px";
+    <p>
+      Fondos de pantalla 4K gratis para PC y celular
+    </p>
 
-    gallery.appendChild(img);
-  });
-</script>
+    <div class="search-box">
+      <span>🔍</span>
+
+      <input
+        id="search"
+        type="search"
+        placeholder="Buscar wallpaper por nombre..."
+        autocomplete="off"
+      />
+
+      <button id="clear" type="button">×</button>
+    </div>
+
+    <div id="result-info"></div>
+  </header>
+
+
+  <main>
+
+    <div id="gallery" class="gallery"></div>
+
+
+    <div id="no-results" class="no-results">
+      <div>🔍</div>
+      <h2>No encontramos wallpapers</h2>
+      <p>Prueba con otro nombre.</p>
+    </div>
+
+
+    <div id="pagination" class="pagination">
+
+      <button id="prev-page" type="button">
+        ← Anterior
+      </button>
+
+      <span id="page-info">
+        Página 1
+      </span>
+
+      <button id="next-page" type="button">
+        Siguiente →
+      </button>
+
+    </div>
+
+  </main>
+
+
+  <!-- LIGHTBOX -->
+
+  <div id="lightbox" class="lightbox">
+
+    <button
+      id="close"
+      class="close-btn"
+      aria-label="Cerrar"
+    >
+      ×
+    </button>
+
+    <button
+      id="lightbox-prev"
+      class="nav-btn prev"
+      aria-label="Anterior"
+    >
+      ❮
+    </button>
+
+    <div class="lightbox-content">
+
+      <img
+        id="lightbox-image"
+        src=""
+        alt=""
+      />
+
+      <div class="lightbox-footer">
+
+        <h2 id="lightbox-title"></h2>
+
+        <a
+          id="download"
+          class="download-btn"
+          href=""
+          download
+          target="_blank"
+        >
+          Descargar 4K
+        </a>
+
+      </div>
+
+    </div>
+
+    <button
+      id="lightbox-next"
+      class="nav-btn next"
+      aria-label="Siguiente"
+    >
+      ❯
+    </button>
+
+  </div>
+
+
+  <footer>
+    <p>
+      © 2026 Wallpapers 4K — Descargas directas de alta resolución
+    </p>
+  </footer>
+
+
+  <script define:vars={{ wallpapers }}>
+
+    const PER_PAGE = 20;
+
+    let currentPage = 1;
+
+    let currentList = wallpapers;
+
+    let currentLightboxIndex = 0;
+
+
+    const gallery =
+      document.getElementById("gallery");
+
+    const search =
+      document.getElementById("search");
+
+    const clear =
+      document.getElementById("clear");
+
+    const resultInfo =
+      document.getElementById("result-info");
+
+    const pagination =
+      document.getElementById("pagination");
+
+    const pageInfo =
+      document.getElementById("page-info");
+
+    const prevPage =
+      document.getElementById("prev-page");
+
+    const nextPage =
+      document.getElementById("next-page");
+
+    const noResults =
+      document.getElementById("no-results");
+
+
+    const lightbox =
+      document.getElementById("lightbox");
+
+    const lightboxImage =
+      document.getElementById("lightbox-image");
+
+    const lightboxTitle =
+      document.getElementById("lightbox-title");
+
+    const download =
+      document.getElementById("download");
+
+    const close =
+      document.getElementById("close");
+
+    const lightboxPrev =
+      document.getElementById("lightbox-prev");
+
+    const lightboxNext =
+      document.getElementById("lightbox-next");
+
+
+    // ==========================================
+    // GALERÍA
+    // ==========================================
+
+    function renderGallery() {
+
+      gallery.innerHTML = "";
+
+      const totalPages =
+        Math.ceil(
+          currentList.length / PER_PAGE
+        );
+
+
+      if (currentList.length === 0) {
+
+        gallery.style.display = "none";
+
+        noResults.style.display = "block";
+
+        pagination.style.display = "none";
+
+        resultInfo.textContent = "";
+
+        return;
+
+      }
+
+
+      gallery.style.display = "grid";
+
+      noResults.style.display = "none";
+
+      pagination.style.display = "flex";
+
+
+      const start =
+        (currentPage - 1) * PER_PAGE;
+
+      const end =
+        Math.min(
+          start + PER_PAGE,
+          currentList.length
+        );
+
+
+      for (
+        let i = start;
+        i < end;
+        i++
+      ) {
+
+        const item = currentList[i];
+
+
+        const card =
+          document.createElement("article");
+
+        card.className = "card";
+
+
+        const image =
+          document.createElement("img");
+
+        image.src = item.url;
+
+        image.alt = item.title;
+
+        image.loading = "lazy";
+
+
+        const overlay =
+          document.createElement("div");
+
+        overlay.className =
+          "card-overlay";
+
+
+        const title =
+          document.createElement("span");
+
+        title.textContent =
+          item.title;
+
+
+        overlay.appendChild(title);
+
+        card.appendChild(image);
+
+        card.appendChild(overlay);
+
+        gallery.appendChild(card);
+
+
+        card.addEventListener(
+          "click",
+          () => {
+
+            openLightbox(i);
+
+          }
+        );
+
+      }
+
+
+      pageInfo.textContent =
+        `Página ${currentPage} de ${totalPages}`;
+
+
+      prevPage.disabled =
+        currentPage === 1;
+
+
+      nextPage.disabled =
+        currentPage === totalPages;
+
+
+      resultInfo.textContent =
+        `Mostrando ${start + 1}-${end} de ${currentList.length}`;
+
+    }
+
+
+    // ==========================================
+    // BUSCADOR
+    // ==========================================
+
+    function normalize(text) {
+
+      return text
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+    }
+
+
+    search.addEventListener(
+      "input",
+      () => {
+
+        const query =
+          normalize(search.value.trim());
+
+
+        if (query === "") {
+
+          currentList = wallpapers;
+
+          clear.style.display = "none";
+
+        } else {
+
+          currentList =
+            wallpapers.filter((item) => {
+
+              const title =
+                normalize(item.title);
+
+              const filename =
+                normalize(item.filename);
+
+              return (
+                title.includes(query) ||
+                filename.includes(query)
+              );
+
+            });
+
+          clear.style.display = "block";
+
+        }
+
+
+        currentPage = 1;
+
+        renderGallery();
+
+      }
+    );
+
+
+    clear.addEventListener(
+      "click",
+      () => {
+
+        search.value = "";
+
+        currentList = wallpapers;
+
+        currentPage = 1;
+
+        clear.style.display = "none";
+
+        renderGallery();
+
+        search.focus();
+
+      }
+    );
+
+
+    // ==========================================
+    // PAGINACIÓN
+    // ==========================================
+
+    nextPage.addEventListener(
+      "click",
+      () => {
+
+        const totalPages =
+          Math.ceil(
+            currentList.length / PER_PAGE
+          );
+
+
+        if (currentPage < totalPages) {
+
+          currentPage++;
+
+          renderGallery();
+
+          window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+          });
+
+        }
+
+      }
+    );
+
+
+    prevPage.addEventListener(
+      "click",
+      () => {
+
+        if (currentPage > 1) {
+
+          currentPage--;
+
+          renderGallery();
+
+          window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+          });
+
+        }
+
+      }
+    );
+
+
+    // ==========================================
+    // LIGHTBOX
+    // ==========================================
+
+    function openLightbox(index) {
+
+      currentLightboxIndex = index;
+
+      updateLightbox();
+
+      lightbox.classList.add("active");
+
+      document.body.style.overflow =
+        "hidden";
+
+    }
+
+
+    function updateLightbox() {
+
+      const item =
+        currentList[currentLightboxIndex];
+
+      if (!item) return;
+
+
+      lightboxImage.src =
+        item.url;
+
+      lightboxImage.alt =
+        item.title;
+
+      lightboxTitle.textContent =
+        item.title;
+
+      download.href =
+        item.url;
+
+    }
+
+
+    function closeLightbox() {
+
+      lightbox.classList.remove("active");
+
+      document.body.style.overflow =
+        "auto";
+
+    }
+
+
+    function nextLightbox() {
+
+      if (currentList.length === 0)
+        return;
+
+      currentLightboxIndex =
+        (currentLightboxIndex + 1)
+        % currentList.length;
+
+      updateLightbox();
+
+    }
+
+
+    function previousLightbox() {
+
+      if (currentList.length === 0)
+        return;
+
+      currentLightboxIndex =
+        (
+          currentLightboxIndex -
+          1 +
+          currentList.length
+        )
+        % currentList.length;
+
+      updateLightbox();
+
+    }
+
+
+    close.addEventListener(
+      "click",
+      closeLightbox
+    );
+
+
+    lightboxNext.addEventListener(
+      "click",
+      nextLightbox
+    );
+
+
+    lightboxPrev.addEventListener(
+      "click",
+      previousLightbox
+    );
+
+
+    lightbox.addEventListener(
+      "click",
+      (event) => {
+
+        if (event.target === lightbox) {
+
+          closeLightbox();
+
+        }
+
+      }
+    );
+
+
+    // ==========================================
+    // TECLADO
+    // ==========================================
+
+    document.addEventListener(
+      "keydown",
+      (event) => {
+
+        if (
+          !lightbox.classList.contains("active")
+        ) {
+          return;
+        }
+
+
+        if (event.key === "Escape") {
+
+          closeLightbox();
+
+        }
+
+
+        if (event.key === "ArrowRight") {
+
+          nextLightbox();
+
+        }
+
+
+        if (event.key === "ArrowLeft") {
+
+          previousLightbox();
+
+        }
+
+      }
+    );
+
+
+    // ==========================================
+    // INICIAR
+    // ==========================================
+
+    renderGallery();
+
+  </script>
+
+
+  <style>
+
+    :root {
+
+      --bg-color: #090d16;
+      --card-bg: #151c2c;
+      --accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+
+    }
+
+
+    * {
+
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+
+    }
+
+
+    body {
+
+      background-color:
+        var(--bg-color);
+
+      color:
+        var(--text-main);
+
+      font-family:
+        system-ui,
+        -apple-system,
+        sans-serif;
+
+      min-height: 100vh;
+
+      display: flex;
+
+      flex-direction: column;
+
+    }
+
+
+    /* HEADER */
+
+    header {
+
+      text-align: center;
+
+      padding:
+        3rem 1rem 1.5rem;
+
+    }
+
+
+    header h1 {
+
+      font-size: 2.2rem;
+
+      font-weight: 800;
+
+      letter-spacing: -0.025em;
+
+    }
+
+
+    header p {
+
+      color:
+        var(--text-muted);
+
+      margin-top: 0.5rem;
+
+      font-size: 0.95rem;
+
+    }
+
+
+    /* BUSCADOR */
+
+    .search-box {
+
+      max-width: 650px;
+
+      width: 100%;
+
+      margin:
+        1.5rem auto 0;
+
+      display: flex;
+
+      align-items: center;
+
+      background:
+        #111827;
+
+      border:
+        1px solid
+        rgba(148, 163, 184, 0.2);
+
+      border-radius: 14px;
+
+      transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
+
+    }
+
+
+    .search-box:focus-within {
+
+      border-color:
+        var(--accent);
+
+      box-shadow:
+        0 0 0 3px
+        rgba(56, 189, 248, 0.1);
+
+    }
+
+
+    .search-box span {
+
+      margin-left: 1rem;
+
+      opacity: 0.6;
+
+    }
+
+
+    .search-box input {
+
+      width: 100%;
+
+      border: none;
+
+      outline: none;
+
+      background: transparent;
+
+      color:
+        var(--text-main);
+
+      padding:
+        1rem 0.75rem;
+
+      font-size: 1rem;
+
+    }
+
+
+    .search-box input::placeholder {
+
+      color:
+        #64748b;
+
+    }
+
+
+    .search-box button {
+
+      display: none;
+
+      background: none;
+
+      border: none;
+
+      color:
+        var(--text-muted);
+
+      font-size: 1.6rem;
+
+      cursor: pointer;
+
+      padding:
+        0 1rem;
+
+    }
+
+
+    .search-box button:hover {
+
+      color: white;
+
+    }
+
+
+    #result-info {
+
+      min-height: 20px;
+
+      margin-top: 0.5rem;
+
+      color:
+        var(--text-muted);
+
+      font-size: 0.8rem;
+
+    }
+
+
+    /* MAIN */
+
+    main {
+
+      flex: 1;
+
+      padding: 1.5rem;
+
+      max-width: 1400px;
+
+      width: 100%;
+
+      margin: 0 auto;
+
+    }
+
+
+    /* GALERÍA */
+
+    .gallery {
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          auto-fill,
+          minmax(300px, 1fr)
+        );
+
+      gap: 1.5rem;
+
+    }
+
+
+    .card {
+
+      background:
+        var(--card-bg);
+
+      border-radius: 16px;
+
+      overflow: hidden;
+
+      position: relative;
+
+      aspect-ratio: 16 / 9;
+
+      cursor: pointer;
+
+      box-shadow:
+        0 10px 15px -3px
+        rgba(0, 0, 0, 0.4);
+
+      transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+
+    }
+
+
+    .card:hover {
+
+      transform:
+        translateY(-6px);
+
+      box-shadow:
+        0 20px 25px -5px
+        rgba(56, 189, 248, 0.15);
+
+    }
+
+
+    .card img {
+
+      width: 100%;
+
+      height: 100%;
+
+      object-fit: cover;
+
+      display: block;
+
+    }
+
+
+    .card-overlay {
+
+      position: absolute;
+
+      inset: 0;
+
+      background:
+        linear-gradient(
+          to top,
+          rgba(0,0,0,0.85) 0%,
+          transparent 60%
+        );
+
+      display: flex;
+
+      align-items: flex-end;
+
+      padding: 1rem;
+
+      opacity: 0;
+
+      transition:
+        opacity 0.25s ease;
+
+    }
+
+
+    .card:hover .card-overlay {
+
+      opacity: 1;
+
+    }
+
+
+    .card-overlay span {
+
+      font-size: 0.9rem;
+
+      font-weight: 600;
+
+    }
+
+
+    /* SIN RESULTADOS */
+
+    .no-results {
+
+      display: none;
+
+      text-align: center;
+
+      padding: 5rem 1rem;
+
+      color:
+        var(--text-muted);
+
+    }
+
+
+    .no-results div {
+
+      font-size: 3rem;
+
+      margin-bottom: 1rem;
+
+    }
+
+
+    .no-results h2 {
+
+      color:
+        var(--text-main);
+
+      font-size: 1.3rem;
+
+      margin-bottom: 0.5rem;
+
+    }
+
+
+    /* PAGINACIÓN */
+
+    .pagination {
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      gap: 1rem;
+
+      margin:
+        2.5rem 0 1rem;
+
+    }
+
+
+    .pagination button {
+
+      background:
+        var(--card-bg);
+
+      color:
+        var(--text-main);
+
+      border:
+        1px solid
+        rgba(148, 163, 184, 0.2);
+
+      border-radius: 10px;
+
+      padding:
+        0.7rem 1.2rem;
+
+      font-size: 0.9rem;
+
+      font-weight: 600;
+
+      cursor: pointer;
+
+      transition:
+        background 0.2s,
+        border-color 0.2s;
+
+    }
+
+
+    .pagination button:hover:not(:disabled) {
+
+      background:
+        rgba(56, 189, 248, 0.12);
+
+      border-color:
+        var(--accent);
+
+    }
+
+
+    .pagination button:disabled {
+
+      opacity: 0.35;
+
+      cursor: not-allowed;
+
+    }
+
+
+    #page-info {
+
+      color:
+        var(--text-muted);
+
+      min-width: 120px;
+
+      text-align: center;
+
+      font-size: 0.9rem;
+
+    }
+
+
+    /* LIGHTBOX */
+
+    .lightbox {
+
+      position: fixed;
+
+      inset: 0;
+
+      background:
+        rgba(5, 8, 15, 0.95);
+
+      backdrop-filter:
+        blur(12px);
+
+      z-index: 1000;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      opacity: 0;
+
+      pointer-events: none;
+
+      transition:
+        opacity 0.3s ease;
+
+    }
+
+
+    .lightbox.active {
+
+      opacity: 1;
+
+      pointer-events: auto;
+
+    }
+
+
+    .lightbox-content {
+
+      max-width: 90vw;
+
+      max-height: 85vh;
+
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: center;
+
+    }
+
+
+    .lightbox-content img {
+
+      max-width: 100%;
+
+      max-height: 70vh;
+
+      border-radius: 12px;
+
+      object-fit: contain;
+
+      box-shadow:
+        0 25px 50px -12px
+        rgba(0, 0, 0, 0.7);
+
+    }
+
+
+    .lightbox-footer {
+
+      margin-top: 1.25rem;
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 1.5rem;
+
+    }
+
+
+    .lightbox-footer h2 {
+
+      font-size: 1.2rem;
+
+      font-weight: 600;
+
+      text-align: center;
+
+    }
+
+
+    .download-btn {
+
+      background:
+        var(--accent);
+
+      color:
+        #0f172a;
+
+      padding:
+        0.6rem 1.2rem;
+
+      border-radius: 8px;
+
+      text-decoration: none;
+
+      font-weight: 700;
+
+      font-size: 0.9rem;
+
+    }
+
+
+    .download-btn:hover {
+
+      background:
+        #7dd3fc;
+
+    }
+
+
+    /* BOTONES LIGHTBOX */
+
+    .close-btn {
+
+      position: absolute;
+
+      top: 1.5rem;
+
+      right: 2rem;
+
+      background: none;
+
+      border: none;
+
+      color: white;
+
+      font-size: 2.5rem;
+
+      cursor: pointer;
+
+      line-height: 1;
+
+    }
+
+
+    .nav-btn {
+
+      position: absolute;
+
+      top: 50%;
+
+      transform:
+        translateY(-50%);
+
+      background:
+        rgba(255,255,255,0.08);
+
+      border: none;
+
+      color: white;
+
+      font-size: 1.5rem;
+
+      padding:
+        1rem 1.25rem;
+
+      border-radius: 50%;
+
+      cursor: pointer;
+
+    }
+
+
+    .nav-btn:hover {
+
+      background:
+        rgba(255,255,255,0.2);
+
+    }
+
+
+    .nav-btn.prev {
+
+      left: 2rem;
+
+    }
+
+
+    .nav-btn.next {
+
+      right: 2rem;
+
+    }
+
+
+    /* FOOTER */
+
+    footer {
+
+      text-align: center;
+
+      padding: 2rem;
+
+      color:
+        var(--text-muted);
+
+      font-size: 0.85rem;
+
+    }
+
+
+    /* MOBILE */
+
+    @media (max-width: 768px) {
+
+      header {
+
+        padding:
+          2rem 1rem 1rem;
+
+      }
+
+
+      header h1 {
+
+        font-size: 1.8rem;
+
+      }
+
+
+      main {
+
+        padding: 1rem;
+
+      }
+
+
+      .gallery {
+
+        grid-template-columns: 1fr;
+
+      }
+
+
+      .pagination {
+
+        gap: 0.5rem;
+
+      }
+
+
+      .pagination button {
+
+        padding:
+          0.65rem 0.8rem;
+
+        font-size: 0.8rem;
+
+      }
+
+
+      #page-info {
+
+        min-width: 90px;
+
+        font-size: 0.8rem;
+
+      }
+
+
+      .nav-btn.prev {
+
+        left: 0.5rem;
+
+      }
+
+
+      .nav-btn.next {
+
+        right: 0.5rem;
+
+      }
+
+
+      .lightbox-footer {
+
+        flex-direction: column;
+
+        gap: 0.75rem;
+
+      }
+
+
+      .lightbox-footer h2 {
+
+        max-width: 70vw;
+
+      }
+
+    }
+
+  </style>
+
+</body>
+</html>
+```
