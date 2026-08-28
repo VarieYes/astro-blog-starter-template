@@ -16,9 +16,15 @@ function formatAltText(filename: string) {
     .replace(/\b\w/g, char => char.toUpperCase());
 }
 
+function toSlug(filename: string) {
+  const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.')) || filename;
+  return nameWithoutExt.toLowerCase().replace(/_/g, '-');
+}
+
 const wallpapers = wallpaperFiles.map(filename => ({
   filename,
   title: formatAltText(filename),
+  slug: toSlug(filename),
   url: `${R2_PUBLIC_URL}/${filename}`
 }));
 ---
@@ -52,7 +58,7 @@ const wallpapers = wallpaperFiles.map(filename => ({
   <main>
     <div class="gallery" id="gallery">
       {wallpapers.map((item, index) => (
-        <article class="card" data-index={index} data-title={item.title.toLowerCase()}>
+        <article class="card" data-index={index} data-title={item.title.toLowerCase()} data-slug={item.slug}>
           <img src={item.url} alt={item.title} loading="lazy" />
           <div class="card-overlay">
             <span>{item.title}</span>
@@ -79,7 +85,15 @@ const wallpapers = wallpaperFiles.map(filename => ({
       <img id="lightbox-img" src="" alt="" />
       <div class="lightbox-footer">
         <h2 id="lightbox-title"></h2>
-        <a id="download-btn" href="" download target="_blank" class="download-btn">Descargar 4K</a>
+        <div class="lightbox-actions">
+          <a id="download-btn" href="" download target="_blank" class="download-btn">Descargar 4K</a>
+          <a id="pinterest-btn" href="" target="_blank" rel="noopener noreferrer" class="pinterest-btn" aria-label="Compartir en Pinterest">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+              <path d="M12 0C5.373 0 0 5.372 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.024 0 1.518.769 1.518 1.688 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 0 1 .083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.632-2.749-1.379l-.748 2.848c-.271 1.043-1.002 2.349-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/>
+            </svg>
+            <span>Pinear</span>
+          </a>
+        </div>
       </div>
     </div>
 
@@ -111,6 +125,7 @@ const wallpapers = wallpaperFiles.map(filename => ({
     const lightboxImg = document.getElementById('lightbox-img');
     const lightboxTitle = document.getElementById('lightbox-title');
     const downloadBtn = document.getElementById('download-btn');
+    const pinterestBtn = document.getElementById('pinterest-btn');
     const closeBtn = document.getElementById('close-btn');
     const prevBtn = document.getElementById('prev-btn');
     const nextBtn = document.getElementById('next-btn');
@@ -181,19 +196,30 @@ const wallpapers = wallpaperFiles.map(filename => ({
 
     // ---------- Lightbox ----------
 
-    function openLightbox(originalIndex) {
+    function openLightbox(originalIndex, options = {}) {
+      const { pushHistory = true } = options;
       const pos = filteredIndices.indexOf(originalIndex);
       currentLightboxPos = pos !== -1 ? pos : 0;
       updateLightbox();
       lightbox.classList.add('active');
       lightbox.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
+
+      if (pushHistory) {
+        const slug = wallpapers[filteredIndices[currentLightboxPos]].slug;
+        history.pushState({ wallpaper: slug }, '', `?wallpaper=${slug}`);
+      }
     }
 
-    function closeLightbox() {
+    function closeLightbox(options = {}) {
+      const { pushHistory = true } = options;
       lightbox.classList.remove('active');
       lightbox.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = 'auto';
+
+      if (pushHistory) {
+        history.pushState({}, '', location.pathname);
+      }
     }
 
     function updateLightbox() {
@@ -203,18 +229,33 @@ const wallpapers = wallpaperFiles.map(filename => ({
       lightboxImg.alt = current.title;
       lightboxTitle.textContent = current.title;
       downloadBtn.href = current.url;
+
+      const pageUrl = `${location.origin}${location.pathname}?wallpaper=${current.slug}`;
+      const pinParams = new URLSearchParams({
+        url: pageUrl,
+        media: current.url,
+        description: `${current.title} - Wallpaper 4K`
+      });
+      pinterestBtn.href = `https://www.pinterest.com/pin/create/button/?${pinParams.toString()}`;
+    }
+
+    function updateUrlForCurrent() {
+      const slug = wallpapers[filteredIndices[currentLightboxPos]].slug;
+      history.replaceState({ wallpaper: slug }, '', `?wallpaper=${slug}`);
     }
 
     function showNext() {
       if (filteredIndices.length === 0) return;
       currentLightboxPos = (currentLightboxPos + 1) % filteredIndices.length;
       updateLightbox();
+      updateUrlForCurrent();
     }
 
     function showPrev() {
       if (filteredIndices.length === 0) return;
       currentLightboxPos = (currentLightboxPos - 1 + filteredIndices.length) % filteredIndices.length;
       updateLightbox();
+      updateUrlForCurrent();
     }
 
     // Eventos de las cards (delegación, funciona para todas aunque cambien de página)
@@ -225,7 +266,7 @@ const wallpapers = wallpaperFiles.map(filename => ({
       openLightbox(index);
     });
 
-    closeBtn.addEventListener('click', closeLightbox);
+    closeBtn.addEventListener('click', () => closeLightbox());
     nextBtn.addEventListener('click', showNext);
     prevBtn.addEventListener('click', showPrev);
 
@@ -241,8 +282,28 @@ const wallpapers = wallpaperFiles.map(filename => ({
       if (e.key === 'ArrowLeft') showPrev();
     });
 
+    // ---------- Deep-linking (abrir directo desde la URL) ----------
+
+    function openFromUrl(pushHistory) {
+      const params = new URLSearchParams(location.search);
+      const slug = params.get('wallpaper');
+      if (!slug) {
+        closeLightbox({ pushHistory: false });
+        return;
+      }
+      const originalIndex = wallpapers.findIndex(w => w.slug === slug);
+      if (originalIndex === -1) return;
+      openLightbox(originalIndex, { pushHistory });
+    }
+
+    // Botón atrás/adelante del navegador
+    window.addEventListener('popstate', () => {
+      openFromUrl(false);
+    });
+
     // Render inicial
     renderPage();
+    openFromUrl(false); // si alguien entra con ?wallpaper=algo, abre directo esa imagen
   </script>
 
 </body>
@@ -460,6 +521,12 @@ const wallpapers = wallpaperFiles.map(filename => ({
     font-weight: 600;
   }
 
+  .lightbox-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
   .download-btn {
     background-color: var(--accent);
     color: #0f172a;
@@ -472,6 +539,22 @@ const wallpapers = wallpaperFiles.map(filename => ({
   }
 
   .download-btn:hover { background-color: #7dd3fc; }
+
+  .pinterest-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #E60023;
+    color: #ffffff;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+  }
+
+  .pinterest-btn:hover { background-color: #ad081b; }
 
   /* Controls */
   .close-btn {
@@ -515,5 +598,6 @@ const wallpapers = wallpaperFiles.map(filename => ({
     .nav-btn.prev { left: 0.5rem; }
     .nav-btn.next { right: 0.5rem; }
     .lightbox-footer { flex-direction: column; gap: 0.75rem; }
+    .lightbox-actions { flex-wrap: wrap; justify-content: center; }
   }
 </style>
