@@ -1,1475 +1,341 @@
-```astro
 ---
 const R2_PUBLIC_URL = "https://pub-df215eae79ca46a2a27f03bec087cad1.r2.dev";
 
+// Asegúrate de que los nombres coincidan exactamente con tus archivos en R2
 const wallpaperFiles = [
   "saturn_rings_space.jpg",
   "rainbow_minimalist_landscape.jpg",
   "sunflower_field_sunset.jpg",
   "sunflower_sunset_dream.jpg"
-
-  // Agrega más aquí:
-  // "otro_wallpaper.jpg",
-  // "paisaje_4k.jpg",
-  // "naturaleza_4k.jpg",
 ];
 
-const wallpapers = wallpaperFiles.map((filename) => ({
-  filename: filename,
-  title: filename
-    .replace(/\.[^/.]+$/, "")
-    .replace(/[-_]/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase()),
+function formatAltText(filename: string) {
+  const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.')) || filename;
+  return nameWithoutExt
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, char => char.toUpperCase());
+}
+
+const wallpapers = wallpaperFiles.map(filename => ({
+  filename,
+  title: formatAltText(filename),
   url: `${R2_PUBLIC_URL}/${filename}`
 }));
 ---
 
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>Wallpapers 4K Ultra HD</title>
-
-  <meta
-    name="description"
-    content="Colección de fondos de pantalla 4K gratis para PC y celular."
-  />
+  <title>Galería de Wallpapers 4K Ultra HD</title>
+  <meta name="description" content="Colección de fondos de pantalla 4K gratis para PC y celular." />
 </head>
-
 <body>
 
-<header>
+  <header>
+    <h1>Wallpapers 4K</h1>
+    <p>Haz clic en cualquier imagen para verla en tamaño completo</p>
+  </header>
 
-  <h1>Wallpapers 4K</h1>
+  <main>
+    <div class="gallery">
+      {wallpapers.map((item, index) => (
+        <article class="card" data-index={index}>
+          <img src={item.url} alt={item.title} loading="lazy" />
+          <div class="card-overlay">
+            <span>{item.title}</span>
+          </div>
+        </article>
+      ))}
+    </div>
+  </main>
 
-  <p>
-    Fondos de pantalla 4K gratis para PC y celular
-  </p>
-
-  <!-- BUSCADOR -->
-
-  <div class="search-container">
-
-    <input
-      id="searchInput"
-      type="search"
-      placeholder="🔍 Buscar wallpaper por nombre..."
-    />
-
-    <button id="clearSearch">
-      ×
-    </button>
-
-  </div>
-
-  <p id="resultsInfo"></p>
-
-</header>
-
-
-<main>
-
-  <!-- GALERÍA -->
-
-  <div id="gallery" class="gallery"></div>
-
-
-  <!-- MENSAJE SIN RESULTADOS -->
-
-  <div id="noResults" class="no-results">
-
-    <div>🔍</div>
-
-    <h2>No se encontraron wallpapers</h2>
-
-    <p>
-      Prueba buscando con otro nombre.
-    </p>
-
-  </div>
-
-
-  <!-- PAGINACIÓN -->
-
-  <div id="pagination" class="pagination">
-
-    <button id="prevPage">
-      ← Anterior
-    </button>
-
-    <span id="pageNumber">
-      Página 1
-    </span>
-
-    <button id="nextPage">
-      Siguiente →
-    </button>
-
-  </div>
-
-</main>
-
-
-<!-- LIGHTBOX -->
-
-<div id="lightbox" class="lightbox">
-
-  <button
-    id="closeLightbox"
-    class="close-btn"
-  >
-    ×
-  </button>
-
-
-  <button
-    id="prevImage"
-    class="nav-btn prev"
-  >
-    ❮
-  </button>
-
-
-  <div class="lightbox-content">
-
-    <img
-      id="lightboxImg"
-      src=""
-      alt=""
-    />
-
-    <div class="lightbox-footer">
-
-      <h2 id="lightboxTitle"></h2>
-
-      <a
-        id="downloadBtn"
-        class="download-btn"
-        href=""
-        download
-      >
-        Descargar 4K
-      </a>
-
+  <!-- Visualizador en Pantalla Completa (Lightbox Modal) -->
+  <div id="lightbox" class="lightbox" aria-hidden="true">
+    <button id="close-btn" class="close-btn" aria-label="Cerrar">&times;</button>
+    <button id="prev-btn" class="nav-btn prev" aria-label="Anterior">&#10094;</button>
+    
+    <div class="lightbox-content">
+      <img id="lightbox-img" src="" alt="" />
+      <div class="lightbox-footer">
+        <h2 id="lightbox-title"></h2>
+        <a id="download-btn" href="" download target="_blank" class="download-btn">Descargar 4K</a>
+      </div>
     </div>
 
+    <button id="next-btn" class="nav-btn next" aria-label="Siguiente">&#10095;</button>
   </div>
 
+  <footer>
+    <p>© 2026 Wallpapers 4K — Descargas directas de alta resolución</p>
+  </footer>
 
-  <button
-    id="nextImage"
-    class="nav-btn next"
-  >
-    ❯
-  </button>
+  <script is:inline define:vars={{ wallpapers }}>
+    let currentIndex = 0;
 
-</div>
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const lightboxTitle = document.getElementById('lightbox-title');
+    const downloadBtn = document.getElementById('download-btn');
+    const closeBtn = document.getElementById('close-btn');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
 
-
-<footer>
-
-  <p>
-    © 2026 Wallpapers 4K — Descargas directas de alta resolución
-  </p>
-
-</footer>
-
-
-<script define:vars={{ wallpapers }}>
-
-  // ==========================================
-  // CONFIGURACIÓN
-  // ==========================================
-
-  const PER_PAGE = 20;
-
-  let currentPage = 1;
-
-  let filteredWallpapers = wallpapers;
-
-  let currentImage = 0;
-
-
-  // ==========================================
-  // ELEMENTOS
-  // ==========================================
-
-  const gallery =
-    document.getElementById("gallery");
-
-  const searchInput =
-    document.getElementById("searchInput");
-
-  const clearSearch =
-    document.getElementById("clearSearch");
-
-  const resultsInfo =
-    document.getElementById("resultsInfo");
-
-  const pagination =
-    document.getElementById("pagination");
-
-  const prevPage =
-    document.getElementById("prevPage");
-
-  const nextPage =
-    document.getElementById("nextPage");
-
-  const pageNumber =
-    document.getElementById("pageNumber");
-
-  const noResults =
-    document.getElementById("noResults");
-
-
-  // LIGHTBOX
-
-  const lightbox =
-    document.getElementById("lightbox");
-
-  const lightboxImg =
-    document.getElementById("lightboxImg");
-
-  const lightboxTitle =
-    document.getElementById("lightboxTitle");
-
-  const downloadBtn =
-    document.getElementById("downloadBtn");
-
-  const closeLightbox =
-    document.getElementById("closeLightbox");
-
-  const prevImage =
-    document.getElementById("prevImage");
-
-  const nextImage =
-    document.getElementById("nextImage");
-
-
-  // ==========================================
-  // MOSTRAR GALERÍA
-  // ==========================================
-
-  function renderGallery() {
-
-    gallery.innerHTML = "";
-
-
-    // Si no hay resultados
-
-    if (filteredWallpapers.length === 0) {
-
-      gallery.style.display = "none";
-
-      noResults.style.display = "block";
-
-      pagination.style.display = "none";
-
-      resultsInfo.textContent = "";
-
-      return;
-
+    function openLightbox(index) {
+      currentIndex = index;
+      updateLightbox();
+      lightbox.classList.add('active');
+      lightbox.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
     }
 
-
-    gallery.style.display = "grid";
-
-    noResults.style.display = "none";
-
-    pagination.style.display = "flex";
-
-
-    // Total de páginas
-
-    const totalPages =
-      Math.ceil(
-        filteredWallpapers.length / PER_PAGE
-      );
-
-
-    // Evitar páginas inexistentes
-
-    if (currentPage > totalPages) {
-
-      currentPage = totalPages;
-
+    function closeLightbox() {
+      lightbox.classList.remove('active');
+      lightbox.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = 'auto';
     }
 
-
-    // Primera imagen
-
-    const start =
-      (currentPage - 1) * PER_PAGE;
-
-
-    // Última imagen
-
-    const end =
-      Math.min(
-        start + PER_PAGE,
-        filteredWallpapers.length
-      );
-
-
-    // Crear las tarjetas
-
-    for (
-      let i = start;
-      i < end;
-      i++
-    ) {
-
-      const item =
-        filteredWallpapers[i];
-
-
-      const card =
-        document.createElement("article");
-
-      card.className = "card";
-
-
-      const img =
-        document.createElement("img");
-
-      img.src = item.url;
-
-      img.alt = item.title;
-
-      img.loading = "lazy";
-
-
-      const overlay =
-        document.createElement("div");
-
-      overlay.className =
-        "card-overlay";
-
-
-      const title =
-        document.createElement("span");
-
-      title.textContent =
-        item.title;
-
-
-      overlay.appendChild(title);
-
-      card.appendChild(img);
-
-      card.appendChild(overlay);
-
-      gallery.appendChild(card);
-
-
-      // Abrir lightbox
-
-      card.addEventListener(
-        "click",
-        () => {
-
-          openLightbox(i);
-
-        }
-      );
-
+    function updateLightbox() {
+      const current = wallpapers[currentIndex];
+      lightboxImg.src = current.url;
+      lightboxImg.alt = current.title;
+      lightboxTitle.textContent = current.title;
+      downloadBtn.href = current.url;
     }
 
-
-    // Información
-
-    resultsInfo.textContent =
-      `Mostrando ${start + 1}-${end} de ${filteredWallpapers.length} wallpapers`;
-
-
-    // Página
-
-    pageNumber.textContent =
-      `Página ${currentPage} de ${totalPages}`;
-
-
-    // Botones
-
-    prevPage.disabled =
-      currentPage === 1;
-
-    nextPage.disabled =
-      currentPage === totalPages;
-
-  }
-
-
-  // ==========================================
-  // BUSCADOR
-  // ==========================================
-
-  searchInput.addEventListener(
-    "input",
-    () => {
-
-      const search =
-        searchInput.value
-          .toLowerCase()
-          .trim();
-
-
-      // Mostrar / ocultar X
-
-      if (search.length > 0) {
-
-        clearSearch.style.display =
-          "block";
-
-      } else {
-
-        clearSearch.style.display =
-          "none";
-
-      }
-
-
-      // Filtrar
-
-      filteredWallpapers =
-        wallpapers.filter(
-          (item) => {
-
-            return item.title
-              .toLowerCase()
-              .includes(search);
-
-          }
-        );
-
-
-      // Volver a página 1
-
-      currentPage = 1;
-
-      renderGallery();
-
+    function showNext() {
+      currentIndex = (currentIndex + 1) % wallpapers.length;
+      updateLightbox();
     }
-  );
 
-
-  // Limpiar búsqueda
-
-  clearSearch.addEventListener(
-    "click",
-    () => {
-
-      searchInput.value = "";
-
-      filteredWallpapers =
-        wallpapers;
-
-      currentPage = 1;
-
-      clearSearch.style.display =
-        "none";
-
-      renderGallery();
-
-      searchInput.focus();
-
+    function showPrev() {
+      currentIndex = (currentIndex - 1 + wallpapers.length) % wallpapers.length;
+      updateLightbox();
     }
-  );
 
-
-  // ==========================================
-  // SIGUIENTE PÁGINA
-  // ==========================================
-
-  nextPage.addEventListener(
-    "click",
-    () => {
-
-      const totalPages =
-        Math.ceil(
-          filteredWallpapers.length / PER_PAGE
-        );
-
-
-      if (currentPage < totalPages) {
-
-        currentPage++;
-
-        renderGallery();
-
-        window.scrollTo({
-          top: 0,
-          behavior: "smooth"
-        });
-
-      }
-
-    }
-  );
-
-
-  // ==========================================
-  // PÁGINA ANTERIOR
-  // ==========================================
-
-  prevPage.addEventListener(
-    "click",
-    () => {
-
-      if (currentPage > 1) {
-
-        currentPage--;
-
-        renderGallery();
-
-        window.scrollTo({
-          top: 0,
-          behavior: "smooth"
-        });
-
-      }
-
-    }
-  );
-
-
-  // ==========================================
-  // LIGHTBOX
-  // ==========================================
-
-  function openLightbox(index) {
-
-    currentImage = index;
-
-    updateLightbox();
-
-    lightbox.classList.add("active");
-
-    document.body.style.overflow =
-      "hidden";
-
-  }
-
-
-  function updateLightbox() {
-
-    const item =
-      filteredWallpapers[currentImage];
-
-
-    if (!item) return;
-
-
-    lightboxImg.src =
-      item.url;
-
-    lightboxImg.alt =
-      item.title;
-
-    lightboxTitle.textContent =
-      item.title;
-
-    downloadBtn.href =
-      item.url;
-
-  }
-
-
-  function closeModal() {
-
-    lightbox.classList.remove("active");
-
-    document.body.style.overflow =
-      "auto";
-
-  }
-
-
-  // Imagen siguiente
-
-  function showNextImage() {
-
-    if (
-      filteredWallpapers.length === 0
-    ) return;
-
-
-    currentImage =
-      (
-        currentImage + 1
-      ) %
-      filteredWallpapers.length;
-
-
-    updateLightbox();
-
-  }
-
-
-  // Imagen anterior
-
-  function showPrevImage() {
-
-    if (
-      filteredWallpapers.length === 0
-    ) return;
-
-
-    currentImage =
-      (
-        currentImage -
-        1 +
-        filteredWallpapers.length
-      ) %
-      filteredWallpapers.length;
-
-
-    updateLightbox();
-
-  }
-
-
-  closeLightbox.addEventListener(
-    "click",
-    closeModal
-  );
-
-
-  nextImage.addEventListener(
-    "click",
-    showNextImage
-  );
-
-
-  prevImage.addEventListener(
-    "click",
-    showPrevImage
-  );
-
-
-  // Cerrar haciendo clic fuera
-
-  lightbox.addEventListener(
-    "click",
-    (event) => {
-
-      if (
-        event.target === lightbox
-      ) {
-
-        closeModal();
-
-      }
-
-    }
-  );
-
-
-  // Teclado
-
-  document.addEventListener(
-    "keydown",
-    (event) => {
-
-      if (
-        !lightbox.classList.contains(
-          "active"
-        )
-      ) return;
-
-
-      if (
-        event.key === "Escape"
-      ) {
-
-        closeModal();
-
-      }
-
-
-      if (
-        event.key === "ArrowRight"
-      ) {
-
-        showNextImage();
-
-      }
-
-
-      if (
-        event.key === "ArrowLeft"
-      ) {
-
-        showPrevImage();
-
-      }
-
-    }
-  );
-
-
-  // ==========================================
-  // INICIAR
-  // ==========================================
-
-  clearSearch.style.display =
-    "none";
-
-  renderGallery();
-
-</script>
-
+    // Eventos
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('click', () => {
+        const index = parseInt(card.getAttribute('data-index'), 10);
+        openLightbox(index);
+      });
+    });
+
+    closeBtn.addEventListener('click', closeLightbox);
+    nextBtn.addEventListener('click', showNext);
+    prevBtn.addEventListener('click', showPrev);
+
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) closeLightbox();
+    });
+
+    // Navegación con Teclado
+    document.addEventListener('keydown', (e) => {
+      if (!lightbox.classList.contains('active')) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowRight') showNext();
+      if (e.key === 'ArrowLeft') showPrev();
+    });
+  </script>
+
+</body>
+</html>
 
 <style>
-
   :root {
-
     --bg-color: #090d16;
     --card-bg: #151c2c;
     --accent: #38bdf8;
     --text-main: #f8fafc;
     --text-muted: #94a3b8;
-
   }
 
-
-  * {
-
-    box-sizing: border-box;
-
-    margin: 0;
-
-    padding: 0;
-
-  }
-
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-
-    background-color:
-      var(--bg-color);
-
-    color:
-      var(--text-main);
-
-    font-family:
-      system-ui,
-      -apple-system,
-      sans-serif;
-
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: system-ui, -apple-system, sans-serif;
     min-height: 100vh;
-
     display: flex;
-
     flex-direction: column;
-
   }
-
-
-  /* HEADER */
 
   header {
-
     text-align: center;
-
-    padding:
-      3rem 1rem 1.5rem;
-
+    padding: 3rem 1rem 1.5rem;
   }
-
 
   header h1 {
-
     font-size: 2.2rem;
-
     font-weight: 800;
-
     letter-spacing: -0.025em;
-
   }
-
 
   header p {
-
-    color:
-      var(--text-muted);
-
+    color: var(--text-muted);
     margin-top: 0.5rem;
-
     font-size: 0.95rem;
-
   }
-
-
-  /* BUSCADOR */
-
-  .search-container {
-
-    max-width: 650px;
-
-    width: 100%;
-
-    margin:
-      1.5rem auto 0;
-
-    position: relative;
-
-  }
-
-
-  #searchInput {
-
-    width: 100%;
-
-    background:
-      #111827;
-
-    border:
-      1px solid
-      rgba(148, 163, 184, 0.25);
-
-    color:
-      white;
-
-    border-radius: 14px;
-
-    padding:
-      1rem 3rem 1rem 1.2rem;
-
-    font-size: 1rem;
-
-    outline: none;
-
-  }
-
-
-  #searchInput:focus {
-
-    border-color:
-      var(--accent);
-
-    box-shadow:
-      0 0 0 3px
-      rgba(56, 189, 248, 0.1);
-
-  }
-
-
-  #searchInput::placeholder {
-
-    color:
-      #64748b;
-
-  }
-
-
-  #clearSearch {
-
-    display: none;
-
-    position: absolute;
-
-    right: 12px;
-
-    top: 50%;
-
-    transform:
-      translateY(-50%);
-
-    background: none;
-
-    border: none;
-
-    color:
-      #94a3b8;
-
-    font-size: 1.6rem;
-
-    cursor: pointer;
-
-  }
-
-
-  #clearSearch:hover {
-
-    color: white;
-
-  }
-
-
-  #resultsInfo {
-
-    font-size: 0.8rem;
-
-    color:
-      var(--text-muted);
-
-    margin-top: 0.7rem;
-
-  }
-
-
-  /* MAIN */
 
   main {
-
     flex: 1;
-
     padding: 1.5rem;
-
     max-width: 1400px;
-
     margin: 0 auto;
-
     width: 100%;
-
   }
-
-
-  /* GALERÍA */
 
   .gallery {
-
     display: grid;
-
-    grid-template-columns:
-      repeat(
-        auto-fill,
-        minmax(300px, 1fr)
-      );
-
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1.5rem;
-
   }
-
 
   .card {
-
-    background-color:
-      var(--card-bg);
-
+    background-color: var(--card-bg);
     border-radius: 16px;
-
     overflow: hidden;
-
     position: relative;
-
     aspect-ratio: 16 / 9;
-
     cursor: pointer;
-
-    box-shadow:
-      0 10px 15px -3px
-      rgba(0, 0, 0, 0.4);
-
-    transition:
-      transform 0.25s ease,
-      box-shadow 0.25s ease;
-
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
   }
-
 
   .card:hover {
-
-    transform:
-      translateY(-6px);
-
-    box-shadow:
-      0 20px 25px -5px
-      rgba(56, 189, 248, 0.15);
-
+    transform: translateY(-6px);
+    box-shadow: 0 20px 25px -5px rgba(56, 189, 248, 0.15);
   }
-
 
   .card img {
-
     width: 100%;
-
     height: 100%;
-
     object-fit: cover;
-
     display: block;
-
   }
-
 
   .card-overlay {
-
     position: absolute;
-
     inset: 0;
-
-    background:
-      linear-gradient(
-        to top,
-        rgba(0,0,0,0.85) 0%,
-        transparent 60%
-      );
-
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%);
     display: flex;
-
     align-items: flex-end;
-
     padding: 1rem;
-
     opacity: 0;
-
-    transition:
-      opacity 0.25s ease;
-
+    transition: opacity 0.25s ease;
   }
 
-
-  .card:hover .card-overlay {
-
-    opacity: 1;
-
-  }
-
+  .card:hover .card-overlay { opacity: 1; }
 
   .card-overlay span {
-
     font-size: 0.9rem;
-
     font-weight: 600;
-
   }
 
-
-  /* SIN RESULTADOS */
-
-  .no-results {
-
-    display: none;
-
-    text-align: center;
-
-    padding: 5rem 1rem;
-
-    color:
-      var(--text-muted);
-
-  }
-
-
-  .no-results div {
-
-    font-size: 3rem;
-
-    margin-bottom: 1rem;
-
-  }
-
-
-  .no-results h2 {
-
-    color:
-      var(--text-main);
-
-    font-size: 1.3rem;
-
-    margin-bottom: 0.5rem;
-
-  }
-
-
-  /* PAGINACIÓN */
-
-  .pagination {
-
-    display: flex;
-
-    justify-content: center;
-
-    align-items: center;
-
-    gap: 1rem;
-
-    margin:
-      2.5rem 0 1rem;
-
-  }
-
-
-  .pagination button {
-
-    background:
-      var(--card-bg);
-
-    color:
-      var(--text-main);
-
-    border:
-      1px solid
-      rgba(148, 163, 184, 0.2);
-
-    border-radius: 10px;
-
-    padding:
-      0.7rem 1.2rem;
-
-    font-size: 0.9rem;
-
-    font-weight: 600;
-
-    cursor: pointer;
-
-  }
-
-
-  .pagination button:hover:not(:disabled) {
-
-    background:
-      rgba(56, 189, 248, 0.12);
-
-    border-color:
-      var(--accent);
-
-  }
-
-
-  .pagination button:disabled {
-
-    opacity: 0.35;
-
-    cursor: not-allowed;
-
-  }
-
-
-  #pageNumber {
-
-    color:
-      var(--text-muted);
-
-    min-width: 120px;
-
-    text-align: center;
-
-    font-size: 0.9rem;
-
-  }
-
-
-  /* LIGHTBOX */
-
+  /* Lightbox Modal */
   .lightbox {
-
     position: fixed;
-
     inset: 0;
-
-    background:
-      rgba(5, 8, 15, 0.95);
-
-    backdrop-filter:
-      blur(12px);
-
+    background-color: rgba(5, 8, 15, 0.95);
+    backdrop-filter: blur(12px);
     z-index: 1000;
-
     display: flex;
-
     align-items: center;
-
     justify-content: center;
-
     opacity: 0;
-
     pointer-events: none;
-
-    transition:
-      opacity 0.3s ease;
-
+    transition: opacity 0.3s ease;
   }
-
 
   .lightbox.active {
-
     opacity: 1;
-
     pointer-events: auto;
-
   }
-
 
   .lightbox-content {
-
     max-width: 90vw;
-
     max-height: 85vh;
-
     display: flex;
-
     flex-direction: column;
-
     align-items: center;
-
   }
-
 
   .lightbox-content img {
-
     max-width: 100%;
-
     max-height: 70vh;
-
     border-radius: 12px;
-
     object-fit: contain;
-
-    box-shadow:
-      0 25px 50px -12px
-      rgba(0, 0, 0, 0.7);
-
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
   }
-
 
   .lightbox-footer {
-
     margin-top: 1.25rem;
-
     display: flex;
-
     align-items: center;
-
     gap: 1.5rem;
-
   }
-
 
   .lightbox-footer h2 {
-
     font-size: 1.2rem;
-
     font-weight: 600;
-
-    text-align: center;
-
   }
-
 
   .download-btn {
-
-    background:
-      var(--accent);
-
-    color:
-      #0f172a;
-
-    padding:
-      0.6rem 1.2rem;
-
+    background-color: var(--accent);
+    color: #0f172a;
+    padding: 0.6rem 1.2rem;
     border-radius: 8px;
-
     text-decoration: none;
-
     font-weight: 700;
-
     font-size: 0.9rem;
-
+    transition: background-color 0.2s;
   }
 
+  .download-btn:hover { background-color: #7dd3fc; }
 
-  .download-btn:hover {
-
-    background:
-      #7dd3fc;
-
-  }
-
-
-  /* BOTÓN CERRAR */
-
+  /* Controls */
   .close-btn {
-
     position: absolute;
-
     top: 1.5rem;
-
     right: 2rem;
-
     background: none;
-
     border: none;
-
     color: white;
-
     font-size: 2.5rem;
-
     cursor: pointer;
-
     line-height: 1;
-
-    z-index: 10;
-
   }
-
-
-  /* FLECHAS LIGHTBOX */
 
   .nav-btn {
-
     position: absolute;
-
     top: 50%;
-
-    transform:
-      translateY(-50%);
-
-    background:
-      rgba(255,255,255,0.08);
-
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.08);
     border: none;
-
     color: white;
-
     font-size: 1.5rem;
-
-    padding:
-      1rem 1.25rem;
-
+    padding: 1rem 1.25rem;
     border-radius: 50%;
-
     cursor: pointer;
-
-    z-index: 10;
-
+    transition: background 0.2s;
   }
 
-
-  .nav-btn:hover {
-
-    background:
-      rgba(255,255,255,0.2);
-
-  }
-
-
-  .nav-btn.prev {
-
-    left: 2rem;
-
-  }
-
-
-  .nav-btn.next {
-
-    right: 2rem;
-
-  }
-
-
-  /* FOOTER */
+  .nav-btn:hover { background: rgba(255, 255, 255, 0.2); }
+  .nav-btn.prev { left: 2rem; }
+  .nav-btn.next { right: 2rem; }
 
   footer {
-
     text-align: center;
-
     padding: 2rem;
-
-    color:
-      var(--text-muted);
-
+    color: var(--text-muted);
     font-size: 0.85rem;
-
   }
-
-
-  /* MOBILE */
 
   @media (max-width: 768px) {
-
-    header {
-
-      padding:
-        2rem 1rem 1rem;
-
-    }
-
-
-    header h1 {
-
-      font-size: 1.8rem;
-
-    }
-
-
-    main {
-
-      padding: 1rem;
-
-    }
-
-
-    .gallery {
-
-      grid-template-columns: 1fr;
-
-    }
-
-
-    .pagination {
-
-      gap: 0.5rem;
-
-    }
-
-
-    .pagination button {
-
-      padding:
-        0.65rem 0.8rem;
-
-      font-size: 0.8rem;
-
-    }
-
-
-    #pageNumber {
-
-      min-width: 90px;
-
-      font-size: 0.8rem;
-
-    }
-
-
-    .nav-btn.prev {
-
-      left: 0.5rem;
-
-    }
-
-
-    .nav-btn.next {
-
-      right: 0.5rem;
-
-    }
-
-
-    .lightbox-footer {
-
-      flex-direction: column;
-
-      gap: 0.75rem;
-
-    }
-
-
-    .lightbox-footer h2 {
-
-      max-width: 70vw;
-
-    }
-
+    .nav-btn.prev { left: 0.5rem; }
+    .nav-btn.next { right: 0.5rem; }
+    .lightbox-footer { flex-direction: column; gap: 0.75rem; }
   }
-
 </style>
-
-</body>
-</html>
-```
