@@ -1,22 +1,26 @@
 ---
-// Tu dominio o URL pública del bucket R2
-const R2_PUBLIC_URL = "https://pub-df215eae79ca46a2a27f03bec087cad1.r2.dev";
+const R2_PUBLIC_URL = "https://wallpapers.yesicagauna1927.workers.dev";
 
-// Lista manual de las imágenes subidas a R2 (agrega o elimina según necesites):
+// Asegúrate de que los nombres coincidan exactamente con tus archivos en R2
 const wallpaperFiles = [
-  "saturn_rings_space.jpg",
+  "saturn-rings-space.jpg",
   "fondo-pantalla-paisaje-montana.png",
   "wallpaper-abstracto-neon.jpg",
   "fondo-de-pantalla-espacio-estrellas.webp"
 ];
 
-// Genera automáticamente un texto ALT descriptivo y limpio usando el nombre del archivo
 function formatAltText(filename: string) {
   const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.')) || filename;
   return nameWithoutExt
     .replace(/[-_]/g, ' ')
     .replace(/\b\w/g, char => char.toUpperCase());
 }
+
+const wallpapers = wallpaperFiles.map(filename => ({
+  filename,
+  title: formatAltText(filename),
+  url: `${R2_PUBLIC_URL}/${filename}`
+}));
 ---
 
 <!DOCTYPE html>
@@ -24,51 +28,134 @@ function formatAltText(filename: string) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Galería de Wallpapers 4K</title>
+  <title>Galería de Wallpapers 4K Ultra HD</title>
+  <meta name="description" content="Colección de fondos de pantalla 4K gratis para PC y celular." />
 </head>
 <body>
+
   <header>
-    <h1>Galería de Wallpapers 4K</h1>
+    <h1>Wallpapers 4K</h1>
+    <p>Haz clic en cualquier imagen para verla en tamaño completo</p>
   </header>
 
   <main>
     <div class="gallery">
-      {wallpaperFiles.map((filename) => {
-        const altText = formatAltText(filename);
-        const imageUrl = `${R2_PUBLIC_URL}/${filename}`;
-        
-        return (
-          <a href={imageUrl} target="_blank" rel="noopener noreferrer" class="card">
-            <img src={imageUrl} alt={altText} loading="lazy" />
-            <div class="card-title">{altText}</div>
-          </a>
-        );
-      })}
+      {wallpapers.map((item, index) => (
+        <article class="card" data-index={index}>
+          <img src={item.url} alt={item.title} loading="lazy" />
+          <div class="card-overlay">
+            <span>{item.title}</span>
+          </div>
+        </article>
+      ))}
     </div>
   </main>
 
+  <!-- Visualizador en Pantalla Completa (Lightbox Modal) -->
+  <div id="lightbox" class="lightbox" aria-hidden="true">
+    <button id="close-btn" class="close-btn" aria-label="Cerrar">&times;</button>
+    <button id="prev-btn" class="nav-btn prev" aria-label="Anterior">&#10094;</button>
+    
+    <div class="lightbox-content">
+      <img id="lightbox-img" src="" alt="" />
+      <div class="lightbox-footer">
+        <h2 id="lightbox-title"></h2>
+        <a id="download-btn" href="" download target="_blank" class="download-btn">Descargar 4K</a>
+      </div>
+    </div>
+
+    <button id="next-btn" class="nav-btn next" aria-label="Siguiente">&#10095;</button>
+  </div>
+
   <footer>
-    <p>Wallpapers almacenados en Cloudflare R2</p>
+    <p>© 2026 Wallpapers 4K — Descargas directas de alta resolución</p>
   </footer>
+
+  <script is:inline define:vars={{ wallpapers }}>
+    let currentIndex = 0;
+
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const lightboxTitle = document.getElementById('lightbox-title');
+    const downloadBtn = document.getElementById('download-btn');
+    const closeBtn = document.getElementById('close-btn');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+
+    function openLightbox(index) {
+      currentIndex = index;
+      updateLightbox();
+      lightbox.classList.add('active');
+      lightbox.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+      lightbox.classList.remove('active');
+      lightbox.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = 'auto';
+    }
+
+    function updateLightbox() {
+      const current = wallpapers[currentIndex];
+      lightboxImg.src = current.url;
+      lightboxImg.alt = current.title;
+      lightboxTitle.textContent = current.title;
+      downloadBtn.href = current.url;
+    }
+
+    function showNext() {
+      currentIndex = (currentIndex + 1) % wallpapers.length;
+      updateLightbox();
+    }
+
+    function showPrev() {
+      currentIndex = (currentIndex - 1 + wallpapers.length) % wallpapers.length;
+      updateLightbox();
+    }
+
+    // Eventos
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('click', () => {
+        const index = parseInt(card.getAttribute('data-index'), 10);
+        openLightbox(index);
+      });
+    });
+
+    closeBtn.addEventListener('click', closeLightbox);
+    nextBtn.addEventListener('click', showNext);
+    prevBtn.addEventListener('click', showPrev);
+
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) closeLightbox();
+    });
+
+    // Navegación con Teclado
+    document.addEventListener('keydown', (e) => {
+      if (!lightbox.classList.contains('active')) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowRight') showNext();
+      if (e.key === 'ArrowLeft') showPrev();
+    });
+  </script>
+
 </body>
 </html>
 
 <style>
   :root {
-    --bg-color: #0f172a;
-    --card-bg: #1e293b;
-    --text-color: #f8fafc;
+    --bg-color: #090d16;
+    --card-bg: #151c2c;
+    --accent: #38bdf8;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
   }
 
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
     background-color: var(--bg-color);
-    color: var(--text-color);
+    color: var(--text-main);
     font-family: system-ui, -apple-system, sans-serif;
     min-height: 100vh;
     display: flex;
@@ -77,18 +164,19 @@ function formatAltText(filename: string) {
 
   header {
     text-align: center;
-    padding: 2rem 1rem;
-    background-color: rgba(15, 23, 42, 0.8);
-    backdrop-filter: blur(8px);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    border-bottom: 1px solid #334155;
+    padding: 3rem 1rem 1.5rem;
   }
 
   header h1 {
-    font-size: 1.8rem;
-    font-weight: 700;
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+  }
+
+  header p {
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
   }
 
   main {
@@ -101,26 +189,24 @@ function formatAltText(filename: string) {
 
   .gallery {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
   }
 
   .card {
-    display: block;
     background-color: var(--card-bg);
-    border-radius: 12px;
+    border-radius: 16px;
     overflow: hidden;
     position: relative;
     aspect-ratio: 16 / 9;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-    transition: transform 0.2s ease;
-    text-decoration: none;
-    color: inherit;
     cursor: pointer;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
   }
 
   .card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-6px);
+    box-shadow: 0 20px 25px -5px rgba(56, 189, 248, 0.15);
   }
 
   .card img {
@@ -130,31 +216,126 @@ function formatAltText(filename: string) {
     display: block;
   }
 
-  .card-title {
+  .card-overlay {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 0.75rem 0.5rem;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
-    font-size: 0.85rem;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%);
+    display: flex;
+    align-items: flex-end;
+    padding: 1rem;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.25s ease;
   }
 
-  .card:hover .card-title {
-    opacity: 1;
+  .card:hover .card-overlay { opacity: 1; }
+
+  .card-overlay span {
+    font-size: 0.9rem;
+    font-weight: 600;
   }
+
+  /* Lightbox Modal */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(5, 8, 15, 0.95);
+    backdrop-filter: blur(12px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .lightbox.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .lightbox-content {
+    max-width: 90vw;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .lightbox-content img {
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 12px;
+    object-fit: contain;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  }
+
+  .lightbox-footer {
+    margin-top: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .lightbox-footer h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+
+  .download-btn {
+    background-color: var(--accent);
+    color: #0f172a;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+  }
+
+  .download-btn:hover { background-color: #7dd3fc; }
+
+  /* Controls */
+  .close-btn {
+    position: absolute;
+    top: 1.5rem;
+    right: 2rem;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2.5rem;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    padding: 1rem 1.25rem;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .nav-btn:hover { background: rgba(255, 255, 255, 0.2); }
+  .nav-btn.prev { left: 2rem; }
+  .nav-btn.next { right: 2rem; }
 
   footer {
     text-align: center;
-    padding: 1.5rem;
-    color: #64748b;
-    font-size: 0.875rem;
-    border-top: 1px solid #334155;
+    padding: 2rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 768px) {
+    .nav-btn.prev { left: 0.5rem; }
+    .nav-btn.next { right: 0.5rem; }
+    .lightbox-footer { flex-direction: column; gap: 0.75rem; }
   }
 </style>
